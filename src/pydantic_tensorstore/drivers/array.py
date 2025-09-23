@@ -1,7 +1,5 @@
 """Array driver specification for in-memory arrays."""
 
-from __future__ import annotations
-
 from typing import Any, ClassVar, Literal
 
 import numpy as np

@@ -1,7 +1,5 @@
 """Common types and enums used throughout TensorStore specifications."""
 
-from __future__ import annotations
-
 from contextlib import suppress
 from enum import Enum
 from typing import Annotated, Any, Literal, TypeAlias

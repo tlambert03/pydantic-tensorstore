@@ -1,13 +1,14 @@
 """High-level validation functions for TensorStore specifications."""
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import TypeAdapter
 
-from pydantic_tensorstore import TensorStoreSpec
+if TYPE_CHECKING:
+    from pydantic_tensorstore import TensorStoreSpec
 
 
-def validate_spec(spec: Any, strict: bool = True) -> TensorStoreSpec:
+def validate_spec(spec: Any, strict: bool = True) -> "TensorStoreSpec":
     """Validate a TensorStore specification.
 
     Parameters
@@ -22,6 +23,8 @@ def validate_spec(spec: Any, strict: bool = True) -> TensorStoreSpec:
     TensorStoreSpec
         Validated specification object
     """
+    from pydantic_tensorstore import TensorStoreSpec
+
     adapter = TypeAdapter[TensorStoreSpec](TensorStoreSpec)
     if isinstance(spec, str | bytes | bytearray):
         return adapter.validate_json(spec, strict=strict)

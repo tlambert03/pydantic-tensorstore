@@ -4,16 +4,11 @@ Context resources manage shared components like cache pools,
 concurrency limits, and network configurations.
 """
 
-from __future__ import annotations
-
 from typing import Any
 
 from pydantic import BaseModel, Field
 
-from pydantic_tensorstore._types import (  # noqa: TC001
-    ContextResource,
-    ContextResourceName,
-)
+from pydantic_tensorstore._types import ContextResourceName
 
 
 class CachePool(BaseModel):
@@ -111,19 +106,3 @@ class Context(BaseModel):
             description="HTTP concurrency limits",
         )
     )
-
-    def set_resource(
-        self, name: str, resource: ContextResource | dict[str, Any] | str
-    ) -> None:
-        """Set a context resource."""
-        setattr(self, name, resource)
-
-    @classmethod
-    def create_default(cls) -> Context:
-        """Create a context with sensible defaults."""
-        return cls(
-            cache_pool=CachePool(),
-            data_copy_concurrency=DataCopyConcurrency(),
-            file_io_concurrency=FileIOConcurrency(),
-            http_concurrency=HTTPConcurrency(),
-        )

@@ -4,15 +4,13 @@ The Schema defines the structure of data including data type, domain,
 chunk layout, codec, fill value, and dimension units.
 """
 
-from __future__ import annotations
-
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
 from pydantic_tensorstore._types import DataType, Unit
-from pydantic_tensorstore.core.chunk_layout import ChunkLayout  # noqa: TC001
-from pydantic_tensorstore.core.transform import IndexDomain  # noqa: TC001
+from pydantic_tensorstore.core.chunk_layout import ChunkLayout
+from pydantic_tensorstore.core.transform import IndexDomain
 
 
 class Schema(BaseModel):
@@ -20,24 +18,6 @@ class Schema(BaseModel):
 
     Defines the structure and constraints for TensorStore data including
     data type, domain, chunking, encoding, and physical units.
-
-    Attributes
-    ----------
-        dtype: Data type of array elements
-        domain: Index domain (shape and labels)
-        chunk_layout: Chunking configuration
-        codec: Compression and encoding settings
-        fill_value: Default value for unwritten elements
-        dimension_units: Physical units for each dimension
-        rank: Number of dimensions (computed from domain if not specified)
-
-    Example:
-        >>> schema = Schema(
-        ...     dtype="float32",
-        ...     domain={"shape": [100, 200]},
-        ...     chunk_layout={"grid_origin": [0, 0]},
-        ...     fill_value=0.0,
-        ... )
     """
 
     model_config = {"extra": "forbid", "validate_assignment": True}
@@ -104,14 +84,6 @@ class Schema(BaseModel):
 
         return result
 
-    @field_validator("fill_value", mode="before")
-    @classmethod
-    def validate_fill_value(cls, v: Any) -> Any:
-        """Validate fill value compatibility with data type."""
-        # In a full implementation, this would check compatibility with dtype
-        # For now, just ensure it's a reasonable JSON-serializable value
-        return v
-
     def model_post_init(self, __context: Any) -> None:
         """Post-initialization validation."""
         # Validate rank consistency
@@ -134,31 +106,3 @@ class Schema(BaseModel):
                     f"dimension_units length {len(self.dimension_units)} "
                     f"doesn't match rank {self.rank}"
                 )
-
-    def get_effective_rank(self) -> int | None:
-        """Get the effective rank, computed from various sources."""
-        if self.rank is not None:
-            return self.rank
-        if self.domain and self.domain.shape:
-            return len(self.domain.shape)
-        if self.dimension_units:
-            return len(self.dimension_units)
-        return None
-
-    def is_compatible_with(self, other: Schema) -> bool:
-        """Check if this schema is compatible with another schema."""
-        # Check data type compatibility
-        if self.dtype is not None and other.dtype is not None:
-            if self.dtype != other.dtype:
-                return False
-
-        # Check rank compatibility
-        self_rank = self.get_effective_rank()
-        other_rank = other.get_effective_rank()
-        if self_rank is not None and other_rank is not None:
-            if self_rank != other_rank:
-                return False
-
-        # Domain compatibility would require more complex logic
-        # For now, assume compatible if no conflicts
-        return True

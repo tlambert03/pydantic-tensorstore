@@ -1,8 +1,6 @@
 """Zarr3 driver specification for Zarr v3 format."""
 
-from __future__ import annotations
-
-from typing import Annotated, Any, ClassVar, Literal, TypeAlias
+from typing import Annotated, Any, Literal, TypeAlias
 
 from pydantic import (
     AfterValidator,

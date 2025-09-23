@@ -3,13 +3,11 @@
 Defines how data is partitioned into chunks for storage and I/O optimization.
 """
 
-from __future__ import annotations
-
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from pydantic_tensorstore._types import ChunkShape, Shape  # noqa: TC001
+from pydantic_tensorstore._types import ChunkShape, Shape
 
 
 class ChunkLayout(BaseModel):

@@ -12,8 +12,6 @@ Example:
     array
 """
 
-from __future__ import annotations
-
 from importlib.metadata import PackageNotFoundError, version
 
 try:
@@ -23,6 +21,7 @@ except PackageNotFoundError:  # pragma: no cover
 
 
 from pydantic_tensorstore._types import DataType, OpenMode
+from pydantic_tensorstore._validators import validate_spec
 from pydantic_tensorstore.core import (
     ChunkedTensorStoreKvStoreAdapterSpec,
     Context,
@@ -32,7 +31,6 @@ from pydantic_tensorstore.core import (
 )
 from pydantic_tensorstore.drivers import ArraySpec, N5Spec, Zarr3Spec, ZarrSpec
 from pydantic_tensorstore.kvstore import FileKvStore, KvStore, MemoryKvStore, S3KvStore
-from pydantic_tensorstore.validators import validate_spec
 
 __all__ = [
     "ArraySpec",

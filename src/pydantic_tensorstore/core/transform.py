@@ -4,10 +4,11 @@ Index transforms map from input coordinates to output coordinates,
 supporting operations like slicing, transposition, and broadcasting.
 """
 
-from typing import Annotated, Any, Self
+from typing import Annotated, Any
 
 from annotated_types import Interval
 from pydantic import BaseModel, Field, field_validator, model_validator
+from typing_extensions import Self
 
 from pydantic_tensorstore._types import Shape
 
