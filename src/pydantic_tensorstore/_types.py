@@ -2,26 +2,30 @@
 
 from __future__ import annotations
 
+from contextlib import suppress
 from enum import Enum
 from typing import Annotated, Any, Literal, TypeAlias
 
-from pydantic import BaseModel, Field, StringConstraints
+import numpy as np
+from pydantic import (
+    BaseModel,
+    Field,
+    GetCoreSchemaHandler,
+    StringConstraints,
+)
+from pydantic_core import CoreSchema, core_schema
 
 __all__ = [
     "ChunkShape",
     "ContextResource",
     "DataType",
-    "DimensionIndex",
     "DomainShape",
-    "Index",
     "OpenMode",
     "ReadWriteMode",
     "Shape",
 ]
 
 # Basic index types
-DimensionIndex: TypeAlias = int
-Index: TypeAlias = int
 Shape: TypeAlias = list[int]
 ChunkShape: TypeAlias = list[int | None]
 DomainShape: TypeAlias = list[int | Literal["*"]]
@@ -75,6 +79,28 @@ class DataType(str, Enum):
 
     def __str__(self) -> str:
         return self.value
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        members = list(cls.__members__.values())
+        schema = core_schema.enum_schema(cls, members=members)
+
+        def _cast_to_dtype(v: Any) -> Any:
+            if isinstance(v, str):
+                with suppress(ValueError):
+                    return DataType(v)
+                with suppress(ValueError, TypeError):
+                    return DataType(np.dtype(v).name)
+                raise ValueError(
+                    f"Invalid string data type: {v}.  Must be one of {members}"
+                )
+            return v
+
+        return core_schema.no_info_before_validator_function(
+            function=_cast_to_dtype, schema=schema
+        )
 
 
 class OpenMode(str, Enum):

@@ -4,17 +4,12 @@ Index transforms map from input coordinates to output coordinates,
 supporting operations like slicing, transposition, and broadcasting.
 """
 
-from __future__ import annotations
+from typing import Annotated, Any, Self
 
-from typing import Any
+from annotated_types import Interval
+from pydantic import BaseModel, Field, field_validator, model_validator
 
-from pydantic import BaseModel, Field, field_validator
-
-from pydantic_tensorstore._types import (  # noqa: TC001
-    DimensionIndex,
-    Index,
-    Shape,
-)
+from pydantic_tensorstore._types import Shape
 
 
 class DimensionSpec(BaseModel):
@@ -22,18 +17,14 @@ class DimensionSpec(BaseModel):
 
     model_config = {"extra": "forbid"}
 
-    inclusive_min: Index | None = Field(
-        default=None, description="Inclusive lower bound"
-    )
-    exclusive_max: Index | None = Field(
-        default=None, description="Exclusive upper bound"
-    )
-    size: Index | None = Field(default=None, description="Size of the dimension")
+    inclusive_min: int | None = Field(default=None, description="Inclusive lower bound")
+    exclusive_max: int | None = Field(default=None, description="Exclusive upper bound")
+    size: int | None = Field(default=None, description="Size of the dimension")
     label: str | None = Field(default=None, description="Dimension label")
 
     @field_validator("size", mode="before")
     @classmethod
-    def validate_size(cls, v: Any) -> Index | None:
+    def validate_size(cls, v: Any) -> int | None:
         """Validate dimension size."""
         if v is None:
             return None
@@ -86,11 +77,11 @@ class IndexDomain(BaseModel):
 
     shape: Shape | None = Field(default=None, description="Shape of each dimension")
 
-    inclusive_min: list[Index] | None = Field(
+    inclusive_min: list[int] | None = Field(
         default=None, description="Inclusive lower bounds"
     )
 
-    exclusive_max: list[Index] | None = Field(
+    exclusive_max: list[int] | None = Field(
         default=None, description="Exclusive upper bounds"
     )
 
@@ -178,7 +169,7 @@ class IndexDomain(BaseModel):
                     )
 
     @property
-    def rank(self) -> DimensionIndex | None:
+    def rank(self) -> int | None:
         """Get the rank (number of dimensions)."""
         if self.shape is not None:
             return len(self.shape)
@@ -198,12 +189,12 @@ class OutputIndexMap(BaseModel):
 
     model_config = {"extra": "forbid"}
 
-    input_dimension: DimensionIndex | None = Field(
+    input_dimension: int | None = Field(
         default=None, description="Input dimension index"
     )
-    offset: Index = Field(default=0, description="Offset value")
-    stride: Index = Field(default=1, description="Stride value")
-    index_array: list[Index] | None = Field(
+    offset: int = Field(default=0, description="Offset value")
+    stride: int = Field(default=1, description="Stride value")
+    index_array: list[int] | None = Field(
         default=None, description="Index array for advanced indexing"
     )
 
@@ -222,29 +213,26 @@ class IndexTransform(BaseModel):
 
     Maps coordinates from an input space to an output space,
     supporting operations like slicing, broadcasting, and reordering.
-
-    Attributes
-    ----------
-        input_rank: Number of input dimensions
-        output_rank: Number of output dimensions
-        input_shape: Shape of input domain
-        input_labels: Labels for input dimensions
-        input_inclusive_min: Inclusive lower bounds for input
-        input_exclusive_max: Exclusive upper bounds for input
-        output: Output index maps
-
-    Example:
-        >>> transform = IndexTransform(
-        ...     input_shape=[50, 100],
-        ...     output=[{"input_dimension": 0}, {"input_dimension": 1, "offset": 10}],
-        ... )
     """
 
     model_config = {"extra": "forbid", "validate_assignment": True}
 
-    input_rank: DimensionIndex | None = Field(default=None, description="Input rank")
+    input_rank: Annotated[int, Interval(ge=0, le=32)] | None = Field(
+        default=None, description="Number of input dimensions."
+    )
+    input_inclusive_min: list[int | list[int]] | None = Field(
+        default=None, description="Inclusive lower bounds of the input domain."
+    )
 
-    output_rank: DimensionIndex | None = Field(default=None, description="Output rank")
+    input_exclusive_max: list[int | list[int]] | None = Field(
+        default=None, description="Exclusive upper bounds of the input domain."
+    )
+
+    input_inclusive_max: list[int | list[int]] | None = Field(
+        default=None, description="Inclusive upper bounds of the input domain."
+    )
+
+    output_rank: int | None = Field(default=None, description="Output rank")
 
     input_shape: Shape | None = Field(default=None, description="Input domain shape")
 
@@ -252,20 +240,26 @@ class IndexTransform(BaseModel):
         default=None, description="Input dimension labels"
     )
 
-    input_inclusive_min: list[Index] | None = Field(
-        default=None, description="Input inclusive lower bounds"
-    )
-
-    input_exclusive_max: list[Index] | None = Field(
-        default=None, description="Input exclusive upper bounds"
-    )
-
     output: list[OutputIndexMap] | None = Field(
         default=None, description="Output index maps"
     )
 
-    def model_post_init(self, __context: Any) -> None:
+    @model_validator(mode="after")
+    def _post_validate(self) -> Self:
         """Validate transform consistency."""
+        # Validate that at most one of input_exclusive_max, input_inclusive_max,
+        # and input_shape is specified
+        bound_specs = [
+            self.input_exclusive_max is not None,
+            self.input_inclusive_max is not None,
+            self.input_shape is not None,
+        ]
+        if sum(bound_specs) > 1:
+            raise ValueError(
+                "At most one of input_exclusive_max, input_inclusive_max, "
+                "and input_shape may be specified"
+            )
+
         # Determine input rank
         input_rank = self.input_rank
         if input_rank is None and self.input_shape is not None:
@@ -276,6 +270,8 @@ class IndexTransform(BaseModel):
             input_rank = len(self.input_inclusive_min)
         if input_rank is None and self.input_exclusive_max is not None:
             input_rank = len(self.input_exclusive_max)
+        if input_rank is None and self.input_inclusive_max is not None:
+            input_rank = len(self.input_inclusive_max)
 
         # Determine output rank
         output_rank = self.output_rank
@@ -290,6 +286,21 @@ class IndexTransform(BaseModel):
                 raise ValueError("input_shape length doesn't match input rank")
             if self.input_labels is not None and len(self.input_labels) != input_rank:
                 raise ValueError("input_labels length doesn't match input rank")
+            if (
+                self.input_inclusive_min is not None
+                and len(self.input_inclusive_min) != input_rank
+            ):
+                raise ValueError("input_inclusive_min length doesn't match input rank")
+            if (
+                self.input_exclusive_max is not None
+                and len(self.input_exclusive_max) != input_rank
+            ):
+                raise ValueError("input_exclusive_max length doesn't match input rank")
+            if (
+                self.input_inclusive_max is not None
+                and len(self.input_inclusive_max) != input_rank
+            ):
+                raise ValueError("input_inclusive_max length doesn't match input rank")
 
         if output_rank is not None:
             if self.output_rank is not None and self.output_rank != output_rank:
@@ -308,3 +319,4 @@ class IndexTransform(BaseModel):
                         f"Output {i} references input dimension "
                         f"{output_map.input_dimension} >= input rank {input_rank}"
                     )
+        return self

@@ -10,7 +10,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from pydantic_tensorstore._types import DataType, DimensionIndex, Unit
+from pydantic_tensorstore._types import DataType, Unit
 from pydantic_tensorstore.core.chunk_layout import ChunkLayout  # noqa: TC001
 from pydantic_tensorstore.core.transform import IndexDomain  # noqa: TC001
 
@@ -66,9 +66,7 @@ class Schema(BaseModel):
         default=None, description="Physical units for each dimension"
     )
 
-    rank: DimensionIndex | None = Field(
-        default=None, description="Number of dimensions"
-    )
+    rank: int | None = Field(default=None, description="Number of dimensions")
 
     @field_validator("dimension_units", mode="before")
     @classmethod
@@ -137,7 +135,7 @@ class Schema(BaseModel):
                     f"doesn't match rank {self.rank}"
                 )
 
-    def get_effective_rank(self) -> DimensionIndex | None:
+    def get_effective_rank(self) -> int | None:
         """Get the effective rank, computed from various sources."""
         if self.rank is not None:
             return self.rank

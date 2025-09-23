@@ -4,12 +4,19 @@ from __future__ import annotations
 
 from typing import Annotated, Any, ClassVar, Literal, TypeAlias
 
-from pydantic import BaseModel, BeforeValidator, Field, NonNegativeInt, PositiveInt
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    BeforeValidator,
+    Field,
+    NonNegativeInt,
+    PositiveInt,
+)
 
 from pydantic_tensorstore._types import DataType
 from pydantic_tensorstore.core.spec import ChunkedTensorStoreKvStoreAdapterSpec
 
-Zarr3DataType: TypeAlias = Literal[
+VALID_ZARR3_DTYPES: set[DataType] = {
     DataType.BFLOAT16,
     DataType.BOOL,
     DataType.COMPLEX128,
@@ -26,6 +33,16 @@ Zarr3DataType: TypeAlias = Literal[
     DataType.UINT16,
     DataType.UINT32,
     DataType.UINT64,
+}
+
+Zarr3DataType: TypeAlias = Annotated[
+    DataType,
+    AfterValidator(
+        lambda v: v in VALID_ZARR3_DTYPES
+        or ValueError(
+            f"Invalid Zarr3 data type: {v}. Must be one of {VALID_ZARR3_DTYPES}"
+        )
+    ),
 ]
 
 
@@ -86,14 +103,12 @@ class _V2ChunkKeyEncoding(BaseModel):
 Zarr3ChunkKeyEncoding = _DefaultChunkKeyEncoding | _V2ChunkKeyEncoding
 
 
-class Zarr3Metadata(ChunkedTensorStoreKvStoreAdapterSpec):
+class Zarr3Metadata(BaseModel):
     """Zarr v3 metadata specification.
 
     Zarr v3 introduces new features like sharding, variable chunks,
     and improved codec pipelines.
     """
-
-    model_config: ClassVar = {"extra": "allow"}
 
     zarr_format: Literal[3] = 3
     node_type: Literal["array"] = "array"

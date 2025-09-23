@@ -37,6 +37,37 @@ def test_validate_zarr_spec() -> None:
     assert spec.driver == "zarr"
 
 
+def test_validate_zarr_spec2() -> None:
+    """Test validation of Zarr specification."""
+    spec_dict = {
+        "driver": "zarr",
+        "dtype": "<u2",
+        "kvstore": {"driver": "memory"},
+        "metadata": {
+            "chunks": [10, 11],
+            "compressor": None,
+            "dimension_separator": ".",
+            "dtype": "<u2",
+            "fill_value": None,
+            "filters": None,
+            "order": "C",
+            "shape": [100, 200],
+            "zarr_format": 2,
+        },
+        "transform": {
+            "input_exclusive_max": [[100], [200]],
+            "input_inclusive_min": [0, 0],
+        },
+    }
+
+    validated = validate_spec(spec_dict)
+    assert validated.driver == "zarr"
+    assert validated.kvstore
+
+    spec = validate_spec(spec_dict)
+    assert spec.driver == "zarr"
+
+
 def test_validate_unknown_driver() -> None:
     """Test validation with unknown driver."""
     spec_dict = {"driver": "unknown_driver", "some_field": "value"}
