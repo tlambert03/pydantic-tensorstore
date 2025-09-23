@@ -37,6 +37,7 @@ def _str_to_kv_store(value: Any) -> Any:
         if path:
             store["path"] = path[0]
         return store
+    raise ValueError(f"Invalid kvstore string: {value}")
 
 
 # Simple Union type for all kvstore specs

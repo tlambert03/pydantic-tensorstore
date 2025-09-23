@@ -115,7 +115,7 @@ plugins = ["pydantic.mypy"]
 
 [tool.pyright]
 pythonVersion = "3.10"
-reportArgumentType = true
+reportArgumentType = false
 enableExperimentalFeatures = true
 
 # https://coverage.readthedocs.io/

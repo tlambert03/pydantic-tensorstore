@@ -1,17 +1,14 @@
 """N5 driver specification for N5 format."""
 
-from __future__ import annotations
-
 from typing import Any, ClassVar, Literal
 
-from pydantic import Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from pydantic_tensorstore._types import DataType
 from pydantic_tensorstore.core.spec import ChunkedTensorStoreKvStoreAdapterSpec
-from pydantic_tensorstore.kvstore import KvStore  # noqa: TC001
 
 
-class N5Metadata(ChunkedTensorStoreKvStoreAdapterSpec):
+class N5Metadata(BaseModel):
     """N5 metadata specification.
 
     N5 is a chunked array storage format similar to Zarr,
@@ -131,10 +128,6 @@ class N5Spec(ChunkedTensorStoreKvStoreAdapterSpec):
         description="N5 driver identifier",
     )
 
-    kvstore: KvStore = Field(
-        description="Key-value store for data storage",
-    )
-
     path: str = Field(
         default="",
         description="Path within the kvstore for this dataset",
@@ -144,22 +137,6 @@ class N5Spec(ChunkedTensorStoreKvStoreAdapterSpec):
         default=None,
         description="N5 metadata specification",
     )
-
-    def get_effective_path(self) -> str:
-        """Get the effective storage path."""
-        if isinstance(self.kvstore, dict):
-            kvstore_path = self.kvstore.get("path", "")
-        else:
-            kvstore_path = getattr(self.kvstore, "path", "")
-
-        if not kvstore_path:
-            return self.path
-
-        kvstore_path = str(kvstore_path)
-        if not self.path:
-            return kvstore_path
-
-        return f"{kvstore_path.rstrip('/')}/{self.path.lstrip('/')}"
 
     def tensorstore_dtype_to_n5(self, tensorstore_dtype: DataType) -> str:
         """Convert TensorStore DataType to N5 dataType string."""

@@ -46,7 +46,7 @@ def example_zarr_spec() -> None:
             "order": "C",
         },
     )
-    print(f"Zarr spec path: {zarr_spec.get_effective_path()}")
+    print(f"Zarr spec: {zarr_spec}")
 
     # With file storage
     file_zarr_spec = ZarrSpec(
@@ -54,7 +54,7 @@ def example_zarr_spec() -> None:
         kvstore={"driver": "file", "path": "/tmp/zarr_data/"},
         path="dataset.zarr",
     )
-    print(f"File Zarr path: {file_zarr_spec.get_effective_path()}")
+    print(f"File Zarr: {file_zarr_spec}")
 
 
 def example_n5_spec() -> None:
@@ -72,7 +72,7 @@ def example_n5_spec() -> None:
             "compression": {"type": "gzip"},
         },
     )
-    print(f"N5 spec path: {n5_spec.get_effective_path()}")
+    print(f"N5 spec: {n5_spec}")
 
 
 def example_validation_and_parsing() -> None:

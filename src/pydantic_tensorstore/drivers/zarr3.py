@@ -9,7 +9,6 @@ from pydantic import BaseModel, Field
 
 from pydantic_tensorstore._types import DataType
 from pydantic_tensorstore.core.spec import ChunkedTensorStoreKvStoreAdapterSpec
-from pydantic_tensorstore.kvstore import KvStore  # noqa: TC001
 
 Zarr3DataType: TypeAlias = Literal[
     DataType.BFLOAT16,
@@ -150,10 +149,6 @@ class Zarr3Spec(ChunkedTensorStoreKvStoreAdapterSpec):
         description="Zarr3 driver identifier",
     )
 
-    kvstore: KvStore = Field(
-        description="Key-value store for data storage",
-    )
-
     path: str = Field(
         default="",
         description="Path within the kvstore for this array",
@@ -163,20 +158,6 @@ class Zarr3Spec(ChunkedTensorStoreKvStoreAdapterSpec):
         default=None,
         description="Zarr v3 metadata specification",
     )
-
-    def get_effective_path(self) -> str:
-        """Get the effective storage path."""
-        if isinstance(self.kvstore, dict):
-            kvstore_path = str(self.kvstore.get("path", ""))
-        else:
-            kvstore_path = str(getattr(self.kvstore, "path", ""))
-
-        if not kvstore_path:
-            return self.path
-        if not self.path:
-            return kvstore_path
-
-        return f"{kvstore_path.rstrip('/')}/{self.path.lstrip('/')}"
 
     def get_zarr3_defaults(self) -> dict[str, Any]:
         """Get default Zarr v3 configuration."""

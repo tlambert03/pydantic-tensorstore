@@ -3,18 +3,16 @@
 Defines the main TensorStoreSpec class and driver registry system.
 """
 
-from __future__ import annotations
-
-from typing import Annotated, ClassVar
+from typing import Annotated, ClassVar, Literal, TypeAlias
 
 from annotated_types import Interval
 from pydantic import BaseModel, ConfigDict, Field
 
-from pydantic_tensorstore._types import DataType  # noqa: TC001
-from pydantic_tensorstore.core.context import Context  # noqa: TC001
-from pydantic_tensorstore.core.schema import Schema  # noqa: TC001
-from pydantic_tensorstore.core.transform import IndexTransform  # noqa: TC001
-from pydantic_tensorstore.kvstore import KvStore  # noqa: TC001
+from pydantic_tensorstore._types import ContextResource, DataType
+from pydantic_tensorstore.core.context import Context
+from pydantic_tensorstore.core.schema import Schema
+from pydantic_tensorstore.core.transform import IndexTransform
+from pydantic_tensorstore.kvstore import KvStore
 
 
 class BaseSpec(BaseModel):
@@ -56,15 +54,50 @@ class BaseSpec(BaseModel):
     )
 
 
+CacheRevalidationBound: TypeAlias = bool | Literal["open"] | float
+
+
 class TensorStoreKvStoreAdapterSpec(BaseSpec):
     """Specifies a TensorStore stored using a base key-value store."""
 
     # driver: str
-    kvstore: KvStore | None = Field(
-        default=None,
+    kvstore: KvStore = Field(
         description="Key-value store for data storage",
+    )
+
+    path: str = Field(
+        default="",
+        description="Additional path relative to kvstore.",
+    )
+    cache_pool: ContextResource = "cache_pool"
+    data_copy_concurrency: ContextResource = "data_copy_concurrency"
+    recheck_cached_data: CacheRevalidationBound = Field(
+        default="open",
+        description=(
+            "Time after which cached data is assumed to be fresh.  "
+            "Cached data older than the specified time is revalidated prior to being "
+            "returned from a read operation. Writes are always consistent regardless "
+            "of the value of this option. "
+            "Specifying true means that the data will be revalidated prior to every "
+            "read operation. With a value of 'open', any cached data is revalidated "
+            "when the TensorStore is opened but is not rechecked for each read "
+            "operation."
+        ),
     )
 
 
 class ChunkedTensorStoreKvStoreAdapterSpec(TensorStoreKvStoreAdapterSpec):
     """Common options supported by all chunked storage drivers."""
+
+    open: bool | None = None
+    create: bool = False
+    delete_existing: bool = False
+    assume_metadata: bool = False
+    assume_cached_metadata: bool = False
+    metadata_cache_pool: ContextResource | None = None
+    recheck_cached_metadata: CacheRevalidationBound = Field(
+        default="open",
+        description="Time after which cached metadata is assumed to be fresh.",
+    )
+    fill_missing_data_reads: bool = True
+    store_data_equal_to_fill_value: bool = False

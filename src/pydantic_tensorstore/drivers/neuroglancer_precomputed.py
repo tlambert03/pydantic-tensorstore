@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any, ClassVar, Literal
+from typing import Any, Literal
 
 from pydantic import Field
 
 from pydantic_tensorstore.core.spec import ChunkedTensorStoreKvStoreAdapterSpec
-from pydantic_tensorstore.kvstore import KvStore  # noqa: TC001
 
 
 class NeuroglancerPrecomputedSpec(ChunkedTensorStoreKvStoreAdapterSpec):
@@ -33,16 +32,7 @@ class NeuroglancerPrecomputedSpec(ChunkedTensorStoreKvStoreAdapterSpec):
         ... )
     """
 
-    model_config: ClassVar = {"extra": "forbid"}
-
-    driver: Literal["neuroglancer_precomputed"] = Field(
-        default="neuroglancer_precomputed",
-        description="Neuroglancer Precomputed driver identifier",
-    )
-
-    kvstore: KvStore = Field(
-        description="Key-value store for data storage",
-    )
+    driver: Literal["neuroglancer_precomputed"] = "neuroglancer_precomputed"
 
     path: str = Field(
         default="",
@@ -64,18 +54,3 @@ class NeuroglancerPrecomputedSpec(ChunkedTensorStoreKvStoreAdapterSpec):
         default=None,
         description="Scale-specific metadata",
     )
-
-    def get_effective_path(self) -> str:
-        """Get the effective storage path."""
-        if isinstance(self.kvstore, dict):
-            kvstore_path = self.kvstore.get("path", "")
-        else:
-            kvstore_path = getattr(self.kvstore, "path", "")
-
-        if not kvstore_path:
-            return self.path
-        kvstore_path = str(kvstore_path)
-        if not self.path:
-            return kvstore_path
-
-        return f"{kvstore_path.rstrip('/')}/{self.path.lstrip('/')}"

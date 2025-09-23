@@ -1,24 +1,21 @@
 """Zarr driver specification for Zarr v2 format."""
 
-from __future__ import annotations
-
 from typing import Any, ClassVar, Literal
 
-from pydantic import Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 
-from pydantic_tensorstore._types import JsonObject  # noqa: TC001
+from pydantic_tensorstore._types import JsonObject
 from pydantic_tensorstore.core.spec import ChunkedTensorStoreKvStoreAdapterSpec
-from pydantic_tensorstore.kvstore import KvStore  # noqa: TC001
 
 
-class ZarrMetadata(ChunkedTensorStoreKvStoreAdapterSpec):
+class ZarrMetadata(BaseModel):
     """Zarr metadata specification.
 
     Controls Zarr-specific format options like compression,
     chunk shapes, and array metadata.
     """
 
-    model_config: ClassVar = {"extra": "allow"}  # Allow additional zarr metadata fields
+    model_config: ClassVar = {"extra": "allow"}
 
     chunks: list[int] | None = Field(
         default=None,
@@ -104,76 +101,9 @@ class ZarrSpec(ChunkedTensorStoreKvStoreAdapterSpec):
         ... )
     """
 
-    model_config: ClassVar = {"extra": "forbid"}
-
-    driver: Literal["zarr"] = Field(
-        default="zarr",
-        description="Zarr driver identifier",
-    )
-
-    kvstore: KvStore = Field(
-        description="Key-value store for data storage",
-    )
-
-    path: str = Field(
-        default="",
-        description="Path within the kvstore for this array",
-    )
+    driver: Literal["zarr"] = "zarr"
 
     metadata: ZarrMetadata | None = Field(
         default=None,
         description="Zarr metadata specification",
     )
-
-    recheck_cached_data: bool | None = Field(
-        default=None,
-        description="Whether to recheck cached data",
-    )
-
-    recheck_cached_metadata: bool | None = Field(
-        default=None,
-        description="Whether to recheck cached metadata",
-    )
-
-    @field_validator("path", mode="before")
-    @classmethod
-    def validate_path(cls, v: Any) -> Any:
-        """Validate array path."""
-        if not isinstance(v, str):
-            raise ValueError("path must be a string")
-        return v
-
-    def get_effective_path(self) -> str:
-        """Get the effective storage path combining kvstore and array path."""
-        if isinstance(self.kvstore, dict):
-            kvstore_path = str(self.kvstore.get("path", ""))
-        else:
-            kvstore_path = str(getattr(self.kvstore, "path", ""))
-
-        if not kvstore_path:
-            return self.path
-        if not self.path:
-            return kvstore_path
-
-        # Combine paths appropriately
-        if kvstore_path.endswith("/") or self.path.startswith("/"):
-            return kvstore_path + self.path
-        else:
-            return f"{kvstore_path}/{self.path}"
-
-    def get_zarr_metadata_defaults(self) -> dict[str, Any]:
-        """Get default Zarr metadata for this array."""
-        defaults = {
-            "zarr_format": 2,
-            "order": "C",
-            "dimension_separator": ".",
-        }
-
-        if self.metadata:
-            if isinstance(self.metadata, dict):
-                defaults.update(self.metadata)
-            else:
-                # It's a ZarrMetadata object
-                defaults.update(self.metadata.model_dump(exclude_unset=True))
-
-        return defaults
