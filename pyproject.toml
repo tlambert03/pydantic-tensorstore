@@ -8,11 +8,12 @@ source = "vcs"
 [project]
 name = "pydantic-tensorstore"
 dynamic = ["version"]
-description = "Pydantic models for the TensorStore Spec"
+description = "Pydantic models for TensorStore specifications"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = { text = "BSD-3-Clause" }
 authors = [{ name = "Talley Lambert", email = "talley.lambert@gmail.com" }]
+keywords = ["tensorstore", "pydantic", "validation", "scientific-computing"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "License :: OSI Approved :: BSD License",
@@ -23,24 +24,26 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Typing :: Typed",
+    "Topic :: Scientific/Engineering",
 ]
-dependencies = [
-    "pydantic>=2.11.9",
-]
+dependencies = ["pydantic>=2.10.0", "typing-extensions>=4.8.0", "numpy>=1.20.0"]
 
 [project.urls]
 homepage = "https://github.com/tlambert03/pydantic-tensorstore"
 repository = "https://github.com/tlambert03/pydantic-tensorstore"
 
+[project.optional-dependencies]
+tensorstore = ["tensorstore"]
+
 [dependency-groups]
-test = ["pytest", "pytest-cov"]
+test = ["pytest>=7.0.0", "pytest-cov>=4.0.0"]
 dev = [
     { include-group = "test" },
     "ipython",
     "mypy",
-    "pdbpp", # https://github.com/pdbpp/pdbpp
+    "pdbpp",                    # https://github.com/pdbpp/pdbpp
     "pre-commit-uv",
-    "rich", # https://github.com/Textualize/rich
+    "rich",                     # https://github.com/Textualize/rich
     "ruff",
     "tensorstore>=0.1.69",
 ]
