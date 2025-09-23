@@ -1,14 +1,13 @@
 """Base key-value store specification."""
 
-from __future__ import annotations
-
-from abc import ABC
 from typing import ClassVar
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from pydantic_tensorstore._types import ContextResource
 
 
-class BaseKvStoreSpec(BaseModel, ABC):
+class BaseKvStore(BaseModel):
     """Base class for key-value store specifications.
 
     Key-value stores provide the underlying storage layer for many TensorStore
@@ -27,9 +26,19 @@ class BaseKvStoreSpec(BaseModel, ABC):
 
     model_config: ClassVar = {"extra": "forbid", "validate_assignment": True}
 
-    # driver: DriverName = Field(description="Key-value store driver identifier")
+    # driver: str
 
-    # path: str = Field(
-    #     default="",
-    #     description="Path within the key-value store",
-    # )
+    path: str | None = Field(
+        default=None,
+        description=(
+            "Key prefix within the key-value store. If the prefix is intended "
+            "to correspond to a Unix-style directory path, it should end with '/'."
+        ),
+    )
+
+    context: dict[str, ContextResource] | None = Field(
+        default=None,
+        description=(
+            "Specifies context resources that augment/override the parent context."
+        ),
+    )

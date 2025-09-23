@@ -95,14 +95,8 @@ class ReadWriteMode(str, Enum):
     READ_WRITE = "read_write"
 
 
-class ContextResource(BaseModel):
-    """Base class for context resources.
-
-    Context resources are shared components like cache pools,
-    concurrency limiters, and network settings.
-    """
-
-    model_config = {"extra": "allow"}
+ContextResource: TypeAlias = dict | bool | float | int | str | None
+"""Specifies a context resource of a particular <resource-type>."""
 
 
 class Unit(BaseModel):

@@ -1,52 +1,26 @@
 """File system key-value store specification."""
 
-from __future__ import annotations
+from typing import ClassVar, Literal
 
-from pathlib import Path
-from typing import Any, ClassVar, Literal
+from pydantic import Field
 
-from pydantic import Field, field_validator
-
-from pydantic_tensorstore.kvstore.base import BaseKvStoreSpec
+from pydantic_tensorstore._types import ContextResource
+from pydantic_tensorstore.kvstore.base import BaseKvStore
 
 
-class FileKvStoreSpec(BaseKvStoreSpec):
-    """File system key-value store specification.
+class FileKvStore(BaseKvStore):
+    """Read/write access to the local filesystem.
 
     Stores keys as files in a local or network-mounted file system.
-
-    Attributes
-    ----------
-        driver: Must be "file"
-        path: Base path for file storage
-
-    Example:
-        >>> kvstore = FileKvStoreSpec(driver="file", path="/tmp/tensorstore_data/")
     """
 
     model_config: ClassVar = {"extra": "forbid"}
 
-    driver: Literal["file"] = Field(
-        default="file",
-        description="File system key-value store driver",
-    )
+    driver: Literal["file"] = "file"
 
-    path: str = Field(description="Base path for file storage")
+    path: str = Field(description="Path to root directory on local filesystem.")  # pyright: ignore
 
-    @field_validator("path", mode="before")
-    @classmethod
-    def validate_path(cls, v: Any) -> str:
-        """Validate and normalize the file path."""
-        if not isinstance(v, str | Path):
-            raise ValueError("Path must be a string or Path object")
-
-        path_str = str(v)
-        if not path_str:
-            raise ValueError("Path cannot be empty")
-
-        # Convert to absolute path and normalize
-        try:
-            normalized_path = str(Path(path_str).expanduser().resolve())
-            return normalized_path
-        except Exception as e:
-            raise ValueError(f"Invalid path '{path_str}': {e}") from e
+    file_io_concurrency: ContextResource | None = None
+    file_io_sync: ContextResource | None = None
+    file_io_mode: ContextResource | None = None
+    file_io_locking: ContextResource | None = None

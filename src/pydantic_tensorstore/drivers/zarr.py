@@ -7,11 +7,11 @@ from typing import Any, ClassVar, Literal
 from pydantic import Field, field_validator
 
 from pydantic_tensorstore._types import JsonObject  # noqa: TC001
-from pydantic_tensorstore.core.spec import BaseDriverSpec
-from pydantic_tensorstore.kvstore import KvStoreSpec  # noqa: TC001
+from pydantic_tensorstore.core.spec import ChunkedTensorStoreKvStoreAdapterSpec
+from pydantic_tensorstore.kvstore import KvStore  # noqa: TC001
 
 
-class ZarrMetadata(BaseDriverSpec):
+class ZarrMetadata(ChunkedTensorStoreKvStoreAdapterSpec):
     """Zarr metadata specification.
 
     Controls Zarr-specific format options like compression,
@@ -74,7 +74,7 @@ class ZarrMetadata(BaseDriverSpec):
         return v
 
 
-class ZarrSpec(BaseDriverSpec):
+class ZarrSpec(ChunkedTensorStoreKvStoreAdapterSpec):
     """Zarr driver specification for Zarr v2 format.
 
     Zarr is a format for storing chunked, compressed arrays.
@@ -111,7 +111,7 @@ class ZarrSpec(BaseDriverSpec):
         description="Zarr driver identifier",
     )
 
-    kvstore: KvStoreSpec | JsonObject = Field(
+    kvstore: KvStore = Field(
         description="Key-value store for data storage",
     )
 
@@ -120,7 +120,7 @@ class ZarrSpec(BaseDriverSpec):
         description="Path within the kvstore for this array",
     )
 
-    metadata: ZarrMetadata | JsonObject | None = Field(
+    metadata: ZarrMetadata | None = Field(
         default=None,
         description="Zarr metadata specification",
     )

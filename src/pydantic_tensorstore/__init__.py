@@ -24,26 +24,28 @@ except PackageNotFoundError:  # pragma: no cover
 
 from pydantic_tensorstore._types import DataType, OpenMode
 from pydantic_tensorstore.core import (
-    BaseDriverSpec,
+    ChunkedTensorStoreKvStoreAdapterSpec,
     Context,
     IndexTransform,
     Schema,
     TensorStoreSpec,
 )
 from pydantic_tensorstore.drivers import ArraySpec, N5Spec, Zarr3Spec, ZarrSpec
-from pydantic_tensorstore.kvstore import FileKvStoreSpec, MemoryKvStoreSpec
+from pydantic_tensorstore.kvstore import FileKvStore, KvStore, MemoryKvStore, S3KvStore
 from pydantic_tensorstore.validators import validate_spec
 
 __all__ = [
     "ArraySpec",
-    "BaseDriverSpec",
+    "ChunkedTensorStoreKvStoreAdapterSpec",
     "Context",
     "DataType",
-    "FileKvStoreSpec",
+    "FileKvStore",
     "IndexTransform",
-    "MemoryKvStoreSpec",
+    "KvStore",
+    "MemoryKvStore",
     "N5Spec",
     "OpenMode",
+    "S3KvStore",
     "Schema",
     "TensorStoreSpec",
     "Zarr3Spec",

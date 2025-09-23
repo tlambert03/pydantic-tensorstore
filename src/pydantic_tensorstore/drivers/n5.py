@@ -6,12 +6,12 @@ from typing import Any, ClassVar, Literal
 
 from pydantic import Field, field_validator
 
-from pydantic_tensorstore._types import DataType, JsonObject
-from pydantic_tensorstore.core.spec import BaseDriverSpec
-from pydantic_tensorstore.kvstore import KvStoreSpec  # noqa: TC001
+from pydantic_tensorstore._types import DataType
+from pydantic_tensorstore.core.spec import ChunkedTensorStoreKvStoreAdapterSpec
+from pydantic_tensorstore.kvstore import KvStore  # noqa: TC001
 
 
-class N5Metadata(BaseDriverSpec):
+class N5Metadata(ChunkedTensorStoreKvStoreAdapterSpec):
     """N5 metadata specification.
 
     N5 is a chunked array storage format similar to Zarr,
@@ -97,7 +97,7 @@ class N5Metadata(BaseDriverSpec):
         return v
 
 
-class N5Spec(BaseDriverSpec):
+class N5Spec(ChunkedTensorStoreKvStoreAdapterSpec):
     """N5 driver specification for N5 format.
 
     N5 (Not HDF5) is a chunked array storage format that's popular
@@ -131,7 +131,7 @@ class N5Spec(BaseDriverSpec):
         description="N5 driver identifier",
     )
 
-    kvstore: KvStoreSpec | JsonObject = Field(
+    kvstore: KvStore = Field(
         description="Key-value store for data storage",
     )
 
@@ -140,7 +140,7 @@ class N5Spec(BaseDriverSpec):
         description="Path within the kvstore for this dataset",
     )
 
-    metadata: N5Metadata | JsonObject | None = Field(
+    metadata: N5Metadata | None = Field(
         default=None,
         description="N5 metadata specification",
     )

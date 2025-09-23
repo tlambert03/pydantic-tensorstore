@@ -1,23 +1,47 @@
 """Key-value store specifications for TensorStore."""
 
-from typing import Annotated, TypeAlias
+from typing import Annotated, Any, TypeAlias
 
-from pydantic import Field
+from pydantic import BeforeValidator, Field
 
-from pydantic_tensorstore.kvstore.base import BaseKvStoreSpec
-from pydantic_tensorstore.kvstore.file import FileKvStoreSpec
-from pydantic_tensorstore.kvstore.memory import MemoryKvStoreSpec
+from .base import BaseKvStore
+from .file import FileKvStore
+from .memory import MemoryKvStore
+from .s3 import S3KvStore
 
 __all__ = [
-    "BaseKvStoreSpec",
-    "FileKvStoreSpec",
-    "KvStoreSpec",
-    "MemoryKvStoreSpec",
+    "BaseKvStore",
+    "FileKvStore",
+    "KvStore",
+    "MemoryKvStore",
+    "S3KvStore",
 ]
 
 
+def _str_to_kv_store(value: Any) -> Any:
+    """Convert a string to a kvstore specification dictionary."""
+    if not isinstance(value, str):
+        return value
+    if value.startswith("file://"):
+        return {"driver": "file", "path": value[len("file://") :]}
+    if value.startswith("memory://"):
+        store = {"driver": "memory"}
+        if value != "memory://":
+            store["path"] = value[len("memory://") :]
+        return store
+    if value.startswith("s3://"):
+        store = {"driver": "s3"}
+        bucket = value[len("s3://") :]
+        bucket_name, *path = bucket.split("/", 1)
+        store["bucket"] = bucket_name
+        if path:
+            store["path"] = path[0]
+        return store
+
+
 # Simple Union type for all kvstore specs
-KvStoreSpec: TypeAlias = Annotated[
-    FileKvStoreSpec | MemoryKvStoreSpec | MemoryKvStoreSpec,
+KvStore: TypeAlias = Annotated[
+    FileKvStore | MemoryKvStore | S3KvStore,
     Field(discriminator="driver"),
+    BeforeValidator(_str_to_kv_store),
 ]

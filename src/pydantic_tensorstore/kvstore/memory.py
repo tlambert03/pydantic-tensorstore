@@ -1,15 +1,12 @@
 """Memory key-value store specification."""
 
-from __future__ import annotations
+from typing import Literal
 
-from typing import ClassVar, Literal
-
-from pydantic import Field
-
-from pydantic_tensorstore.kvstore.base import BaseKvStoreSpec
+from pydantic_tensorstore._types import ContextResource
+from pydantic_tensorstore.kvstore.base import BaseKvStore
 
 
-class MemoryKvStoreSpec(BaseKvStoreSpec):
+class MemoryKvStore(BaseKvStore):
     """In-memory key-value store specification.
 
     Provides a simple in-memory key-value store for testing and temporary data.
@@ -25,9 +22,6 @@ class MemoryKvStoreSpec(BaseKvStoreSpec):
         >>> kvstore_with_path = MemoryKvStoreSpec(driver="memory", path="my_data/")
     """
 
-    model_config: ClassVar = {"extra": "forbid"}
-
-    driver: Literal["memory"] = Field(
-        default="memory",
-        description="Memory key-value store driver",
-    )
+    driver: Literal["memory"] = "memory"
+    memory_key_value_store: ContextResource | None = None
+    atomic: bool = True

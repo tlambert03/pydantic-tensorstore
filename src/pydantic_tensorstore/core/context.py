@@ -10,10 +10,13 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from pydantic_tensorstore._types import ContextResource, ContextResourceName
+from pydantic_tensorstore._types import (  # noqa: TC001
+    ContextResource,
+    ContextResourceName,
+)
 
 
-class CachePool(ContextResource):
+class CachePool(BaseModel):
     """Cache pool resource for managing memory usage."""
 
     total_bytes_limit: int | None = Field(
@@ -30,7 +33,7 @@ class CachePool(ContextResource):
         return super().model_dump_json(**kwargs)
 
 
-class DataCopyConcurrency(ContextResource):
+class DataCopyConcurrency(BaseModel):
     """Concurrency limits for data copy operations."""
 
     limit: int = Field(
@@ -40,7 +43,7 @@ class DataCopyConcurrency(ContextResource):
     )
 
 
-class FileIOConcurrency(ContextResource):
+class FileIOConcurrency(BaseModel):
     """Concurrency limits for file I/O operations."""
 
     limit: int = Field(
@@ -50,7 +53,7 @@ class FileIOConcurrency(ContextResource):
     )
 
 
-class HTTPConcurrency(ContextResource):
+class HTTPConcurrency(BaseModel):
     """Concurrency limits for HTTP requests."""
 
     limit: int = Field(
@@ -108,23 +111,6 @@ class Context(BaseModel):
             description="HTTP concurrency limits",
         )
     )
-
-    def get_resource(self, name: str) -> ContextResource | None:
-        """Get a context resource by name."""
-        resource = getattr(self, name, None)
-        if isinstance(resource, ContextResource):
-            return resource
-        if isinstance(resource, dict):
-            # Convert dict to appropriate resource type
-            if name == "cache_pool":
-                return CachePool.model_validate(resource)
-            elif name == "data_copy_concurrency":
-                return DataCopyConcurrency.model_validate(resource)
-            elif name == "file_io_concurrency":
-                return FileIOConcurrency.model_validate(resource)
-            elif name == "http_concurrency":
-                return HTTPConcurrency.model_validate(resource)
-        return None
 
     def set_resource(
         self, name: str, resource: ContextResource | dict[str, Any] | str

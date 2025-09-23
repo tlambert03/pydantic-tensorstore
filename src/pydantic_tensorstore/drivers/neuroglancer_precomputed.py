@@ -6,12 +6,11 @@ from typing import Any, ClassVar, Literal
 
 from pydantic import Field
 
-from pydantic_tensorstore._types import JsonObject  # noqa: TC001
-from pydantic_tensorstore.core.spec import BaseDriverSpec
-from pydantic_tensorstore.kvstore import KvStoreSpec  # noqa: TC001
+from pydantic_tensorstore.core.spec import ChunkedTensorStoreKvStoreAdapterSpec
+from pydantic_tensorstore.kvstore import KvStore  # noqa: TC001
 
 
-class NeuroglancerPrecomputedSpec(BaseDriverSpec):
+class NeuroglancerPrecomputedSpec(ChunkedTensorStoreKvStoreAdapterSpec):
     """Neuroglancer Precomputed format driver specification.
 
     Supports the Neuroglancer Precomputed format used for large-scale
@@ -41,7 +40,7 @@ class NeuroglancerPrecomputedSpec(BaseDriverSpec):
         description="Neuroglancer Precomputed driver identifier",
     )
 
-    kvstore: KvStoreSpec | JsonObject = Field(
+    kvstore: KvStore = Field(
         description="Key-value store for data storage",
     )
 

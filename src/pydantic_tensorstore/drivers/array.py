@@ -8,10 +8,10 @@ import numpy as np
 from pydantic import Field, field_validator
 
 from pydantic_tensorstore._types import DataType, JsonObject
-from pydantic_tensorstore.core.spec import BaseDriverSpec
+from pydantic_tensorstore.core.spec import BaseSpec
 
 
-class ArraySpec(BaseDriverSpec):
+class ArraySpec(BaseSpec):
     """Array driver specification for in-memory arrays.
 
     Creates a TensorStore backed by an in-memory NumPy-like array.
@@ -44,10 +44,6 @@ class ArraySpec(BaseDriverSpec):
 
     array: list[Any] | np.ndarray = Field(
         description="Nested array data or NumPy array",
-    )
-
-    dtype: DataType = Field(
-        description="Data type of array elements",
     )
 
     data_copy_concurrency: str | JsonObject | None = Field(

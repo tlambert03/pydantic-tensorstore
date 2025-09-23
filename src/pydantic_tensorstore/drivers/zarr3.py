@@ -2,16 +2,59 @@
 
 from __future__ import annotations
 
-from typing import Any, ClassVar, Literal
+from typing import Annotated, Any, ClassVar, Literal, TypeAlias
 
-from pydantic import Field, field_validator
+from annotated_types import Ge
+from pydantic import BaseModel, Field
 
-from pydantic_tensorstore._types import DataType, JsonObject
-from pydantic_tensorstore.core.spec import BaseDriverSpec
-from pydantic_tensorstore.kvstore import KvStoreSpec  # noqa: TC001
+from pydantic_tensorstore._types import DataType
+from pydantic_tensorstore.core.spec import ChunkedTensorStoreKvStoreAdapterSpec
+from pydantic_tensorstore.kvstore import KvStore  # noqa: TC001
+
+Zarr3DataType: TypeAlias = Literal[
+    DataType.BFLOAT16,
+    DataType.BOOL,
+    DataType.COMPLEX128,
+    DataType.COMPLEX64,
+    DataType.FLOAT16,
+    DataType.FLOAT32,
+    DataType.FLOAT64,
+    DataType.INT4,
+    DataType.INT8,
+    DataType.INT16,
+    DataType.INT32,
+    DataType.INT64,
+    DataType.UINT8,
+    DataType.UINT16,
+    DataType.UINT32,
+    DataType.UINT64,
+]
 
 
-class Zarr3Metadata(BaseDriverSpec):
+class _ZarrChunkConfiguration(BaseModel):
+    chunk_shape: list[Annotated[int, Ge(1)]] | None = Field(
+        default=None,
+        description="""Chunk dimensions.
+
+    Specifies the chunk size for each dimension. Must have the same length as shape. If
+    not specified when creating a new array, the chunk dimensions are chosen
+    automatically according to the Schema.chunk_layout. If specified when creating a new
+    array, the chunk dimensions must be compatible with the Schema.chunk_layout. When
+    opening an existing array, the specified chunk dimensions must match the existing
+    chunk dimensions.
+    """,
+    )
+
+
+class _ZarrChunkGrid(BaseModel):
+    name: Literal["regular"] = Field(
+        default="regular",
+        description="Chunk grid type (only 'regular' is supported)",
+    )
+    configuration: _ZarrChunkConfiguration
+
+
+class Zarr3Metadata(ChunkedTensorStoreKvStoreAdapterSpec):
     """Zarr v3 metadata specification.
 
     Zarr v3 introduces new features like sharding, variable chunks,
@@ -30,15 +73,19 @@ class Zarr3Metadata(BaseDriverSpec):
         description="Node type (array for data arrays)",
     )
 
-    shape: list[int] = Field(
-        description="Array shape",
+    shape: list[Annotated[int, Ge(0)]] = Field(
+        description=(
+            "Array shape. Required when creating a new array "
+            "if the `Schema.domain` is not otherwise specified."
+        ),
     )
 
-    data_type: DataType | str = Field(
+    data_type: Zarr3DataType = Field(
         description="Data type specification",
     )
 
-    chunk_grid: dict[str, Any] = Field(
+    chunk_grid: _ZarrChunkGrid | None = Field(
+        default=None,
         description="Chunk grid specification",
     )
 
@@ -67,37 +114,8 @@ class Zarr3Metadata(BaseDriverSpec):
         description="User-defined attributes",
     )
 
-    @field_validator("shape", mode="before")
-    @classmethod
-    def validate_shape(cls, v: Any) -> list[int]:
-        """Validate array shape."""
-        if not isinstance(v, list):
-            raise ValueError("shape must be a list")
 
-        for i, dim_size in enumerate(v):
-            if not isinstance(dim_size, int) or dim_size < 0:
-                raise ValueError(f"Shape dimension {i} must be a non-negative integer")
-
-        return v
-
-    @field_validator("data_type", mode="before")
-    @classmethod
-    def validate_data_type(cls, v: Any) -> DataType | str:
-        """Validate data type specification."""
-        if isinstance(v, str):
-            # Try to convert to DataType enum if possible
-            try:
-                return DataType(v)
-            except ValueError:
-                # Allow pass-through for Zarr3-specific data types
-                return str(v)
-        if isinstance(v, DataType):
-            return v
-        # Convert anything else to string
-        return str(v)
-
-
-class Zarr3Spec(BaseDriverSpec):
+class Zarr3Spec(ChunkedTensorStoreKvStoreAdapterSpec):
     """Zarr3 driver specification for Zarr v3 format.
 
     Zarr v3 is the next generation of the Zarr format, featuring
@@ -132,7 +150,7 @@ class Zarr3Spec(BaseDriverSpec):
         description="Zarr3 driver identifier",
     )
 
-    kvstore: KvStoreSpec | JsonObject = Field(
+    kvstore: KvStore = Field(
         description="Key-value store for data storage",
     )
 
@@ -141,7 +159,7 @@ class Zarr3Spec(BaseDriverSpec):
         description="Path within the kvstore for this array",
     )
 
-    metadata: Zarr3Metadata | JsonObject | None = Field(
+    metadata: Zarr3Metadata | None = Field(
         default=None,
         description="Zarr v3 metadata specification",
     )
