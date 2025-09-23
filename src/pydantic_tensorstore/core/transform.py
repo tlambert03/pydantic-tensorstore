@@ -10,7 +10,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from pydantic_tensorstore.types.common import (  # noqa: TC001
+from pydantic_tensorstore._types import (  # noqa: TC001
     DimensionIndex,
     Index,
     Shape,

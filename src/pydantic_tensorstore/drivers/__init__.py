@@ -1,13 +1,25 @@
 """TensorStore driver specifications."""
 
-from pydantic_tensorstore.drivers.array import ArraySpec
-from pydantic_tensorstore.drivers.n5 import N5Spec
-from pydantic_tensorstore.drivers.zarr import ZarrSpec
-from pydantic_tensorstore.drivers.zarr3 import Zarr3Spec
+from typing import Annotated, TypeAlias
+
+from pydantic import Field
+
+from .array import ArraySpec
+from .n5 import N5Spec
+from .neuroglancer_precomputed import NeuroglancerPrecomputedSpec
+from .zarr import ZarrSpec
+from .zarr3 import Zarr3Spec
 
 __all__ = [
     "ArraySpec",
     "N5Spec",
+    "NeuroglancerPrecomputedSpec",
     "Zarr3Spec",
     "ZarrSpec",
+]
+
+
+TensorStoreSpec: TypeAlias = Annotated[
+    ArraySpec | N5Spec | NeuroglancerPrecomputedSpec | ZarrSpec | Zarr3Spec,
+    Field(discriminator="driver"),
 ]

@@ -5,7 +5,7 @@ from __future__ import annotations
 from abc import ABC
 from typing import ClassVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class BaseKvStoreSpec(BaseModel, ABC):

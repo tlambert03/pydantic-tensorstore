@@ -114,7 +114,7 @@ def test_validate_invalid_spec_type() -> None:
     with pytest.raises(
         ValidationError, match="Input should be a valid dictionary or object"
     ):
-        validate_spec("not a dict or spec")
+        validate_spec(1)
 
 
 def test_validation_modes() -> None:

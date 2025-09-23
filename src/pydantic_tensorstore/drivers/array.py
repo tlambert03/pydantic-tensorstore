@@ -7,8 +7,8 @@ from typing import Any, ClassVar, Literal
 import numpy as np
 from pydantic import Field, field_validator
 
+from pydantic_tensorstore._types import DataType, JsonObject
 from pydantic_tensorstore.core.spec import BaseDriverSpec
-from pydantic_tensorstore.types.common import DataType, JsonObject
 
 
 class ArraySpec(BaseDriverSpec):

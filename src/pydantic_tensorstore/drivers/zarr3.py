@@ -6,9 +6,9 @@ from typing import Any, ClassVar, Literal
 
 from pydantic import Field, field_validator
 
+from pydantic_tensorstore._types import DataType, JsonObject
 from pydantic_tensorstore.core.spec import BaseDriverSpec
 from pydantic_tensorstore.kvstore import KvStoreSpec  # noqa: TC001
-from pydantic_tensorstore.types.common import DataType, JsonObject
 
 
 class Zarr3Metadata(BaseDriverSpec):

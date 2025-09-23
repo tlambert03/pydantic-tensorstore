@@ -9,7 +9,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from pydantic_tensorstore.types.common import ChunkShape, Shape  # noqa: TC001
+from pydantic_tensorstore._types import ChunkShape, Shape  # noqa: TC001
 
 
 class ChunkLayout(BaseModel):

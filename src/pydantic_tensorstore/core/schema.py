@@ -10,9 +10,9 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
+from pydantic_tensorstore._types import DataType, DimensionIndex, Unit
 from pydantic_tensorstore.core.chunk_layout import ChunkLayout  # noqa: TC001
 from pydantic_tensorstore.core.transform import IndexDomain  # noqa: TC001
-from pydantic_tensorstore.types.common import DataType, DimensionIndex, Unit
 
 
 class Schema(BaseModel):

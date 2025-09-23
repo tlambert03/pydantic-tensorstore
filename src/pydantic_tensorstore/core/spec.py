@@ -8,12 +8,11 @@ from __future__ import annotations
 from abc import ABC
 from typing import ClassVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from pydantic_tensorstore.core.context import Context  # noqa: TC001
 from pydantic_tensorstore.core.schema import Schema  # noqa: TC001
 from pydantic_tensorstore.core.transform import IndexTransform  # noqa: TC001
-from pydantic_tensorstore.types.common import JsonObject  # noqa: TC001
 
 
 class BaseDriverSpec(BaseModel, ABC):
@@ -35,21 +34,26 @@ class BaseDriverSpec(BaseModel, ABC):
         >>> spec = ArraySpec(driver="array", array=[[1, 2], [3, 4]], dtype="int32")
     """
 
-    model_config: ClassVar = {"extra": "forbid", "validate_assignment": True}
+    model_config: ClassVar[ConfigDict] = ConfigDict(
+        extra="forbid",
+        validate_assignment=True,
+        serialize_by_alias=True,
+    )
 
     # driver: DriverName = Field(description="TensorStore driver identifier")
 
-    context: Context | JsonObject | None = Field(
+    context: Context | None = Field(
         default=None,
         description="Context resource configuration",
     )
 
-    schema: Schema | JsonObject | None = Field(  # type: ignore[assignment]
+    schema_: Schema | None = Field(
         default=None,
         description="Schema constraints",
+        alias="schema",
     )
 
-    transform: IndexTransform | JsonObject | None = Field(
+    transform: IndexTransform | None = Field(
         default=None,
         description="Index transform",
     )

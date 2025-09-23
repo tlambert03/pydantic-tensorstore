@@ -7,6 +7,18 @@ from typing import Annotated, Any, Literal, TypeAlias
 
 from pydantic import BaseModel, Field, StringConstraints
 
+__all__ = [
+    "ChunkShape",
+    "ContextResource",
+    "DataType",
+    "DimensionIndex",
+    "DomainShape",
+    "Index",
+    "OpenMode",
+    "ReadWriteMode",
+    "Shape",
+]
+
 # Basic index types
 DimensionIndex: TypeAlias = int
 Index: TypeAlias = int

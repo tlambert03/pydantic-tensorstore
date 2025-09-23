@@ -8,17 +8,11 @@ from __future__ import annotations
 
 import numpy as np
 
-from pydantic_tensorstore.core._union import TensorStoreSpec
-from pydantic_tensorstore.drivers import ArraySpec, N5Spec, ZarrSpec
-from pydantic_tensorstore.utils.builders import (
-    ArraySpecBuilder,
-    SpecBuilder,
-    ZarrSpecBuilder,
-)
-from pydantic_tensorstore.utils.conversion import spec_from_json, spec_to_json
-from pydantic_tensorstore.utils.introspection import (
-    get_spec_info,
-    list_registered_drivers,
+from pydantic_tensorstore import (
+    ArraySpec,
+    N5Spec,
+    ZarrSpec,
+    validate_spec,
 )
 
 
@@ -35,10 +29,6 @@ def example_array_spec() -> None:
     numpy_data = np.random.randn(10, 20).astype(np.float32)
     numpy_spec = ArraySpec(driver="array", array=numpy_data, dtype="float32")
     print(f"NumPy spec shape: {numpy_spec.get_array_shape()}")
-
-    # Using builder
-    builder_spec = ArraySpecBuilder().array([[7, 8], [9, 10]]).dtype("float64").build()
-    print(f"Builder spec: {builder_spec.driver}")
 
 
 def example_zarr_spec() -> None:
@@ -66,17 +56,6 @@ def example_zarr_spec() -> None:
     )
     print(f"File Zarr path: {file_zarr_spec.get_effective_path()}")
 
-    # Using builder
-    builder_spec = (
-        ZarrSpecBuilder()
-        .kvstore("memory")
-        .path("built_array.zarr")
-        .chunks([32, 32])
-        .compression({"id": "gzip"})
-        .build()
-    )
-    print(f"Builder Zarr: {builder_spec.path}")
-
 
 def example_n5_spec() -> None:
     """Example: Creating N5 specifications."""
@@ -96,25 +75,6 @@ def example_n5_spec() -> None:
     print(f"N5 spec path: {n5_spec.get_effective_path()}")
 
 
-def example_generic_builder() -> None:
-    """Example: Using the generic SpecBuilder."""
-    print("\n=== Generic Builder Examples ===")
-
-    # Build a Zarr spec using generic builder
-    spec = (
-        SpecBuilder()
-        .driver("zarr")
-        .kvstore("memory")
-        .dtype("float32")
-        .shape([100, 200])
-        .chunk_shape([50, 50])
-        .compression({"id": "blosc"})
-        .build()
-    )
-
-    print(f"Generic builder spec: {spec.driver}")
-
-
 def example_validation_and_parsing() -> None:
     """Example: Validation and parsing from dictionaries."""
     print("\n=== Validation Examples ===")
@@ -122,34 +82,17 @@ def example_validation_and_parsing() -> None:
     # Parse from dictionary
     spec_dict = {"driver": "array", "array": [[1, 2], [3, 4]], "dtype": "int32"}
 
-    spec = TensorStoreSpec.model_validate(spec_dict)
+    spec = validate_spec(spec_dict)
     print(f"Parsed spec driver: {spec.driver}")
 
     # JSON serialization
-    json_str = spec_to_json(spec, indent=2)
+    json_str = spec.model_dump_json(indent=2)
     print("JSON representation:")
     print(json_str)
 
     # Parse from JSON
-    parsed_spec = spec_from_json(json_str)
+    parsed_spec = validate_spec(json_str)
     print(f"Parsed from JSON: {parsed_spec.driver}")
-
-
-def example_introspection() -> None:
-    """Example: Introspecting specifications and drivers."""
-    print("\n=== Introspection Examples ===")
-
-    # List available drivers
-    drivers = list_registered_drivers()
-    print(f"Available drivers: {drivers}")
-
-    # Get spec information
-    spec = ArraySpec(driver="array", array=[[1, 2, 3], [4, 5, 6]], dtype="float32")
-
-    info = get_spec_info(spec)
-    print("Spec info:")
-    for key, value in info.items():
-        print(f"  {key}: {value}")
 
 
 def example_discriminated_union() -> None:
@@ -164,7 +107,7 @@ def example_discriminated_union() -> None:
     ]
 
     for spec_dict in specs:
-        spec = TensorStoreSpec.model_validate(spec_dict)
+        spec = validate_spec(spec_dict)
         print(f"Parsed as: {type(spec).__name__} with driver '{spec.driver}'")
 
 
@@ -176,9 +119,7 @@ def main() -> None:
     example_array_spec()
     example_zarr_spec()
     example_n5_spec()
-    example_generic_builder()
     example_validation_and_parsing()
-    example_introspection()
     example_discriminated_union()
 
     print("\n✅ All examples completed successfully!")

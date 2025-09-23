@@ -10,7 +10,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from pydantic_tensorstore.types.common import ContextResource, ContextResourceName
+from pydantic_tensorstore._types import ContextResource, ContextResourceName
 
 
 class CachePool(ContextResource):
