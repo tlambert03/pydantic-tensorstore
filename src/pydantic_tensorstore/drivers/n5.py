@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 from pydantic import Field, field_validator
 
@@ -20,7 +20,7 @@ class N5Metadata(BaseDriverSpec):
     developed by the Saalfeld lab at HHMI Janelia.
     """
 
-    model_config = {"extra": "allow"}
+    model_config: ClassVar = {"extra": "allow"}
 
     dimensions: list[int] = Field(
         description="Array dimensions",
@@ -130,7 +130,7 @@ class N5Spec(BaseDriverSpec):
         ... )
     """
 
-    model_config = {"extra": "forbid"}
+    model_config: ClassVar = {"extra": "forbid"}
 
     driver: Literal["n5"] = Field(
         default="n5",

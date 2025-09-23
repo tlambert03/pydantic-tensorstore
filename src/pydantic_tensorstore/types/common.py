@@ -100,6 +100,7 @@ class Unit(BaseModel):
     base_unit: str = Field(default="", description="Base unit (e.g., 'm', 's', 'nm')")
 
     def __str__(self) -> str:
+        """Return string representation of the unit."""
         if self.base_unit == "":
             return str(self.multiplier) if self.multiplier != 1.0 else ""
         if self.multiplier == 1.0:

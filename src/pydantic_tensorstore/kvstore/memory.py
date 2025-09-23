@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import ClassVar, Literal
 
 from pydantic import Field
 
@@ -25,7 +25,7 @@ class MemoryKvStoreSpec(BaseKvStoreSpec):
         >>> kvstore_with_path = MemoryKvStoreSpec(driver="memory", path="my_data/")
     """
 
-    model_config = {"extra": "forbid"}
+    model_config: ClassVar = {"extra": "forbid"}
 
     driver: Literal["memory"] = Field(
         default="memory",

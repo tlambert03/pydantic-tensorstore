@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 from pydantic import Field, field_validator
 
@@ -20,7 +20,7 @@ class Zarr3Metadata(BaseDriverSpec):
     and improved codec pipelines.
     """
 
-    model_config = {"extra": "allow"}
+    model_config: ClassVar = {"extra": "allow"}
 
     zarr_format: Literal[3] = Field(
         default=3,
@@ -128,7 +128,7 @@ class Zarr3Spec(BaseDriverSpec):
         ... )
     """
 
-    model_config = {"extra": "forbid"}
+    model_config: ClassVar = {"extra": "forbid"}
 
     driver: Literal["zarr3"] = Field(
         default="zarr3",

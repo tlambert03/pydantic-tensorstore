@@ -45,7 +45,7 @@ class BaseDriverSpec(BaseModel, ABC):
         description="Context resource configuration",
     )
 
-    schema: Schema | JsonObject | None = Field(
+    schema: Schema | JsonObject | None = Field(  # type: ignore[assignment]
         default=None,
         description="Schema constraints",
     )
@@ -182,7 +182,7 @@ class SpecValidator:
                 available_drivers = list(_driver_specs.keys())
                 raise ValueError(
                     f"Unknown driver '{driver}'. Available drivers: {available_drivers}"
-                )
+                ) from None
 
         # Driver-specific validation
         return SpecValidator._validate_driver_specific(spec_dict)

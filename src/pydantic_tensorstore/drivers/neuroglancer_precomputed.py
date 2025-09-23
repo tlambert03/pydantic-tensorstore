@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 from pydantic import Field, field_validator
 
@@ -36,7 +36,7 @@ class NeuroglancerPrecomputedSpec(BaseDriverSpec):
         ... )
     """
 
-    model_config = {"extra": "forbid"}
+    model_config: ClassVar = {"extra": "forbid"}
 
     driver: Literal["neuroglancer_precomputed"] = Field(
         default="neuroglancer_precomputed",

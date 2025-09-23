@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 from pydantic import Field, field_validator
 
@@ -20,7 +20,7 @@ class ZarrMetadata(BaseDriverSpec):
     chunk shapes, and array metadata.
     """
 
-    model_config = {"extra": "allow"}  # Allow additional zarr metadata fields
+    model_config: ClassVar = {"extra": "allow"}  # Allow additional zarr metadata fields
 
     chunks: list[int] | None = Field(
         default=None,
@@ -110,7 +110,7 @@ class ZarrSpec(BaseDriverSpec):
         ... )
     """
 
-    model_config = {"extra": "forbid"}
+    model_config: ClassVar = {"extra": "forbid"}
 
     driver: Literal["zarr"] = Field(
         default="zarr",

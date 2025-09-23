@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal
 
 from pydantic import Field, field_validator
 
@@ -24,7 +24,7 @@ class FileKvStoreSpec(BaseKvStoreSpec):
         >>> kvstore = FileKvStoreSpec(driver="file", path="/tmp/tensorstore_data/")
     """
 
-    model_config = {"extra": "forbid"}
+    model_config: ClassVar = {"extra": "forbid"}
 
     driver: Literal["file"] = Field(
         default="file",
@@ -51,7 +51,7 @@ class FileKvStoreSpec(BaseKvStoreSpec):
             normalized_path = str(Path(path_str).expanduser().resolve())
             return normalized_path
         except Exception as e:
-            raise ValueError(f"Invalid path '{path_str}': {e}")
+            raise ValueError(f"Invalid path '{path_str}': {e}") from e
 
     def get_driver_kind(self) -> str:
         """Get the driver kind."""

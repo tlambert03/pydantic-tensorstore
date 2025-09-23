@@ -91,7 +91,7 @@ class Schema(BaseModel):
                 if unit == "":
                     result.append(Unit(multiplier=1.0, base_unit=""))
                 else:
-                    # Simple parsing - in real implementation might use a proper unit parser
+                    # Simple parsing - in real implementation might use proper parser
                     import re
 
                     match = re.match(r"^([\d.]+)?([a-zA-Z]*)$", unit)
@@ -123,7 +123,8 @@ class Schema(BaseModel):
             domain_rank = len(self.domain.shape) if self.domain.shape else None
             if domain_rank is not None and domain_rank != self.rank:
                 raise ValueError(
-                    f"Specified rank {self.rank} doesn't match domain rank {domain_rank}"
+                    f"Specified rank {self.rank} doesn't match domain rank "
+                    f"{domain_rank}"
                 )
 
         # Set rank from domain if not specified

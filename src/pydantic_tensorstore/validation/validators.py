@@ -35,7 +35,8 @@ class TensorStoreValidator:
         strict : bool, default True
             If True, performs strict validation including cross-field checks
         check_tensorstore : bool, default False
-            If True, attempts to validate against actual TensorStore (requires tensorstore package)
+            If True, attempts to validate against actual TensorStore
+            (requires tensorstore package)
 
         Returns
         -------
@@ -189,7 +190,8 @@ class TensorStoreValidator:
             domain_shape = domain.get("shape")
             if domain_shape and len(domain_shape) != rank:
                 raise TensorStoreValidationError(
-                    f"Domain shape rank {len(domain_shape)} doesn't match schema rank {rank}",
+                    f"Domain shape rank {len(domain_shape)} doesn't match "
+                    f"schema rank {rank}",
                     field_path="schema",
                 )
 
@@ -205,7 +207,8 @@ class TensorStoreValidator:
         if input_rank is not None and schema_rank is not None:
             if input_rank != schema_rank:
                 raise TensorStoreValidationError(
-                    f"Transform input rank {input_rank} doesn't match schema rank {schema_rank}",
+                    f"Transform input rank {input_rank} doesn't match "
+                    f"schema rank {schema_rank}",
                     field_path="transform",
                 )
 

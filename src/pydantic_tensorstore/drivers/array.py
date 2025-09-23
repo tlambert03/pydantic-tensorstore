@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal
 
 import numpy as np
 from pydantic import Field, field_validator
@@ -35,7 +35,7 @@ class ArraySpec(BaseDriverSpec):
         ... )
     """
 
-    model_config = {"extra": "forbid", "arbitrary_types_allowed": True}
+    model_config: ClassVar = {"extra": "forbid", "arbitrary_types_allowed": True}
 
     driver: Literal["array"] = Field(
         default="array",
@@ -111,7 +111,7 @@ class ArraySpec(BaseDriverSpec):
             arr = np.asarray(v)
             return arr.tolist()  # Convert back to list for JSON serialization
         except Exception as e:
-            raise ValueError(f"Invalid array data: {e}")
+            raise ValueError(f"Invalid array data: {e}") from e
 
     @field_validator("dtype", mode="before")
     @classmethod
@@ -122,7 +122,9 @@ class ArraySpec(BaseDriverSpec):
                 return DataType(v)
             except ValueError:
                 valid_types = [dt.value for dt in DataType]
-                raise ValueError(f"Invalid dtype '{v}'. Valid types: {valid_types}")
+                raise ValueError(
+                    f"Invalid dtype '{v}'. Valid types: {valid_types}"
+                ) from None
         return v
 
     def get_driver_kind(self) -> str:
