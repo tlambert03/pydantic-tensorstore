@@ -115,63 +115,11 @@ class Zarr3Metadata(ChunkedTensorStoreKvStoreAdapterSpec):
 
 
 class Zarr3Spec(ChunkedTensorStoreKvStoreAdapterSpec):
-    """Zarr3 driver specification for Zarr v3 format.
+    """Zarr3 driver specification for Zarr v3 format."""
 
-    Zarr v3 is the next generation of the Zarr format, featuring
-    improved performance, sharding, and enhanced codec support.
-
-    Attributes
-    ----------
-        driver: Must be "zarr3"
-        kvstore: Key-value store for data storage
-        path: Path within the kvstore for this array
-        metadata: Zarr v3 metadata specification
-
-    Example:
-        >>> spec = Zarr3Spec(
-        ...     driver="zarr3",
-        ...     kvstore={"driver": "memory"},
-        ...     metadata={
-        ...         "shape": [1000, 2000],
-        ...         "data_type": "float32",
-        ...         "chunk_grid": {
-        ...             "name": "regular",
-        ...             "configuration": {"chunk_shape": [100, 200]},
-        ...         },
-        ...     },
-        ... )
-    """
-
-    model_config: ClassVar = {"extra": "forbid"}
-
-    driver: Literal["zarr3"] = Field(
-        default="zarr3",
-        description="Zarr3 driver identifier",
-    )
-
-    path: str = Field(
-        default="",
-        description="Path within the kvstore for this array",
-    )
+    driver: Literal["zarr3"] = "zarr3"
 
     metadata: Zarr3Metadata | None = Field(
         default=None,
         description="Zarr v3 metadata specification",
     )
-
-    def get_zarr3_defaults(self) -> dict[str, Any]:
-        """Get default Zarr v3 configuration."""
-        defaults = {
-            "zarr_format": 3,
-            "node_type": "array",
-            "chunk_key_encoding": {"name": "default", "separator": "/"},
-            "attributes": {},
-        }
-
-        if self.metadata:
-            if isinstance(self.metadata, dict):
-                defaults.update(self.metadata)
-            else:
-                defaults.update(self.metadata.model_dump(exclude_unset=True))
-
-        return defaults
