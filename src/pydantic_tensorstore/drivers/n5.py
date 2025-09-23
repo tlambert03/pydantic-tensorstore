@@ -4,7 +4,6 @@ from typing import Any, ClassVar, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-from pydantic_tensorstore._types import DataType
 from pydantic_tensorstore.core.spec import ChunkedTensorStoreKvStoreAdapterSpec
 
 
@@ -95,85 +94,11 @@ class N5Metadata(BaseModel):
 
 
 class N5Spec(ChunkedTensorStoreKvStoreAdapterSpec):
-    """N5 driver specification for N5 format.
+    """N5 driver specification for N5 format."""
 
-    N5 (Not HDF5) is a chunked array storage format that's popular
-    in scientific computing, especially for large-scale image data.
-
-    Attributes
-    ----------
-        driver: Must be "n5"
-        kvstore: Key-value store for data storage
-        path: Path within the kvstore for this array
-        metadata: N5-specific metadata and options
-
-    Example:
-        >>> spec = N5Spec(
-        ...     driver="n5",
-        ...     kvstore={"driver": "file", "path": "/data/n5/"},
-        ...     path="dataset",
-        ...     metadata={
-        ...         "dimensions": [1000, 1000, 100],
-        ...         "blockSize": [64, 64, 64],
-        ...         "dataType": "uint16",
-        ...         "compression": {"type": "gzip"},
-        ...     },
-        ... )
-    """
-
-    model_config: ClassVar = {"extra": "forbid"}
-
-    driver: Literal["n5"] = Field(
-        default="n5",
-        description="N5 driver identifier",
-    )
-
-    path: str = Field(
-        default="",
-        description="Path within the kvstore for this dataset",
-    )
+    driver: Literal["n5"] = "n5"
 
     metadata: N5Metadata | None = Field(
         default=None,
         description="N5 metadata specification",
     )
-
-    def tensorstore_dtype_to_n5(self, tensorstore_dtype: DataType) -> str:
-        """Convert TensorStore DataType to N5 dataType string."""
-        mapping = {
-            DataType.UINT8: "uint8",
-            DataType.UINT16: "uint16",
-            DataType.UINT32: "uint32",
-            DataType.UINT64: "uint64",
-            DataType.INT8: "int8",
-            DataType.INT16: "int16",
-            DataType.INT32: "int32",
-            DataType.INT64: "int64",
-            DataType.FLOAT32: "float32",
-            DataType.FLOAT64: "float64",
-        }
-
-        if tensorstore_dtype not in mapping:
-            raise ValueError(f"DataType {tensorstore_dtype} not supported by N5")
-
-        return mapping[tensorstore_dtype]
-
-    def n5_dtype_to_tensorstore(self, n5_dtype: str) -> DataType:
-        """Convert N5 dataType string to TensorStore DataType."""
-        mapping = {
-            "uint8": DataType.UINT8,
-            "uint16": DataType.UINT16,
-            "uint32": DataType.UINT32,
-            "uint64": DataType.UINT64,
-            "int8": DataType.INT8,
-            "int16": DataType.INT16,
-            "int32": DataType.INT32,
-            "int64": DataType.INT64,
-            "float32": DataType.FLOAT32,
-            "float64": DataType.FLOAT64,
-        }
-
-        if n5_dtype not in mapping:
-            raise ValueError(f"N5 dataType '{n5_dtype}' not supported")
-
-        return mapping[n5_dtype]

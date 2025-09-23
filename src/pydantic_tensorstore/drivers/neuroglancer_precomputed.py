@@ -10,34 +10,9 @@ from pydantic_tensorstore.core.spec import ChunkedTensorStoreKvStoreAdapterSpec
 
 
 class NeuroglancerPrecomputedSpec(ChunkedTensorStoreKvStoreAdapterSpec):
-    """Neuroglancer Precomputed format driver specification.
-
-    Supports the Neuroglancer Precomputed format used for large-scale
-    visualization of volumetric data in the Neuroglancer viewer.
-
-    Attributes
-    ----------
-        driver: Must be "neuroglancer_precomputed"
-        kvstore: Key-value store for data storage
-        path: Path within the kvstore
-        scale_index: Index of the scale to use
-        multiscale_metadata: Metadata for multiscale pyramid
-        scale_metadata: Metadata for specific scale level
-
-    Example:
-        >>> spec = NeuroglancerPrecomputedSpec(
-        ...     driver="neuroglancer_precomputed",
-        ...     kvstore={"driver": "file", "path": "/data/precomputed/"},
-        ...     scale_index=0,
-        ... )
-    """
+    """Neuroglancer Precomputed format driver specification."""
 
     driver: Literal["neuroglancer_precomputed"] = "neuroglancer_precomputed"
-
-    path: str = Field(
-        default="",
-        description="Path within the kvstore",
-    )
 
     scale_index: int | None = Field(
         default=None,

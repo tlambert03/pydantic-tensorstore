@@ -72,34 +72,7 @@ class ZarrMetadata(BaseModel):
 
 
 class ZarrSpec(ChunkedTensorStoreKvStoreAdapterSpec):
-    """Zarr driver specification for Zarr v2 format.
-
-    Zarr is a format for storing chunked, compressed arrays.
-    This spec supports the Zarr v2 specification.
-
-    Attributes
-    ----------
-        driver: Must be "zarr"
-        kvstore: Key-value store for data storage
-        path: Path within the kvstore for this array
-        metadata: Zarr-specific metadata and options
-
-    Example:
-        >>> spec = ZarrSpec(
-        ...     driver="zarr",
-        ...     kvstore={"driver": "memory"},
-        ...     metadata={
-        ...         "chunks": [64, 64],
-        ...         "compressor": {"id": "blosc", "cname": "lz4"},
-        ...     },
-        ... )
-        >>> # With file storage
-        >>> spec = ZarrSpec(
-        ...     driver="zarr",
-        ...     kvstore={"driver": "file", "path": "/data/arrays/"},
-        ...     path="my_array.zarr",
-        ... )
-    """
+    """Zarr driver specification for Zarr v2 format."""
 
     driver: Literal["zarr"] = "zarr"
 
