@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any
 
 from pydantic import ValidationError
 
-from pydantic_tensorstore.core.spec import TensorStoreSpec, SpecValidator
+from pydantic_tensorstore.core.spec import SpecValidator, TensorStoreSpec
 from pydantic_tensorstore.validation.errors import (
-    TensorStoreValidationError,
     DriverValidationError,
+    TensorStoreValidationError,
 )
 
 
@@ -73,7 +73,7 @@ class TensorStoreValidator:
 
     @staticmethod
     def validate_spec(
-        spec: Union[dict[str, Any], TensorStoreSpec],
+        spec: dict[str, Any] | TensorStoreSpec,
         strict: bool = True,
         check_tensorstore: bool = False,
     ) -> TensorStoreSpec:
@@ -164,9 +164,16 @@ class TensorStoreValidator:
         if dtype and driver == "n5":
             # N5 has limited dtype support
             n5_types = {
-                "uint8", "uint16", "uint32", "uint64",
-                "int8", "int16", "int32", "int64",
-                "float32", "float64"
+                "uint8",
+                "uint16",
+                "uint32",
+                "uint64",
+                "int8",
+                "int16",
+                "int32",
+                "int64",
+                "float32",
+                "float64",
             }
             if dtype not in n5_types:
                 raise DriverValidationError(
@@ -270,7 +277,7 @@ class TensorStoreValidator:
 
 # Convenience functions
 def validate_spec(
-    spec: Union[dict[str, Any], TensorStoreSpec],
+    spec: dict[str, Any] | TensorStoreSpec,
     strict: bool = True,
     check_tensorstore: bool = False,
 ) -> TensorStoreSpec:

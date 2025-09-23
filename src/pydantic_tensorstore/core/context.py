@@ -6,7 +6,7 @@ concurrency limits, and network configurations.
 
 from __future__ import annotations
 
-from typing import Any, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -16,7 +16,7 @@ from pydantic_tensorstore.types.common import ContextResource, ContextResourceNa
 class CachePool(ContextResource):
     """Cache pool resource for managing memory usage."""
 
-    total_bytes_limit: Optional[int] = Field(
+    total_bytes_limit: int | None = Field(
         default=None,
         description="Total memory limit in bytes",
         gt=0,
@@ -66,7 +66,8 @@ class Context(BaseModel):
     Manages shared resources like cache pools, concurrency limits,
     and driver-specific configurations.
 
-    Attributes:
+    Attributes
+    ----------
         cache_pool: Memory cache configuration
         data_copy_concurrency: Data copy operation limits
         file_io_concurrency: File I/O operation limits
@@ -76,39 +77,39 @@ class Context(BaseModel):
         >>> context = Context(
         ...     cache_pool={"total_bytes_limit": 1000000000},  # 1GB
         ...     data_copy_concurrency={"limit": 8},
-        ...     http_concurrency={"limit": 16}
+        ...     http_concurrency={"limit": 16},
         ... )
     """
 
     model_config = {"extra": "allow", "validate_assignment": True}
 
-    cache_pool: Optional[Union[CachePool, ContextResourceName, dict[str, Any]]] = Field(
+    cache_pool: CachePool | ContextResourceName | dict[str, Any] | None = Field(
         default=None,
         description="Cache pool resource configuration",
     )
 
-    data_copy_concurrency: Optional[
-        Union[DataCopyConcurrency, ContextResourceName, dict[str, Any]]
-    ] = Field(
+    data_copy_concurrency: (
+        DataCopyConcurrency | ContextResourceName | dict[str, Any] | None
+    ) = Field(
         default=None,
         description="Data copy concurrency limits",
     )
 
-    file_io_concurrency: Optional[
-        Union[FileIOConcurrency, ContextResourceName, dict[str, Any]]
-    ] = Field(
+    file_io_concurrency: (
+        FileIOConcurrency | ContextResourceName | dict[str, Any] | None
+    ) = Field(
         default=None,
         description="File I/O concurrency limits",
     )
 
-    http_concurrency: Optional[
-        Union[HTTPConcurrency, ContextResourceName, dict[str, Any]]
-    ] = Field(
-        default=None,
-        description="HTTP concurrency limits",
+    http_concurrency: HTTPConcurrency | ContextResourceName | dict[str, Any] | None = (
+        Field(
+            default=None,
+            description="HTTP concurrency limits",
+        )
     )
 
-    def get_resource(self, name: str) -> Optional[ContextResource]:
+    def get_resource(self, name: str) -> ContextResource | None:
         """Get a context resource by name."""
         resource = getattr(self, name, None)
         if isinstance(resource, ContextResource):
@@ -125,7 +126,9 @@ class Context(BaseModel):
                 return HTTPConcurrency.model_validate(resource)
         return None
 
-    def set_resource(self, name: str, resource: Union[ContextResource, dict[str, Any], str]) -> None:
+    def set_resource(
+        self, name: str, resource: ContextResource | dict[str, Any] | str
+    ) -> None:
         """Set a context resource."""
         setattr(self, name, resource)
 

@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import Field, field_validator
 
 from pydantic_tensorstore.core.spec import BaseDriverSpec
-from pydantic_tensorstore.kvstore.base import KvStoreSpec
-from pydantic_tensorstore.types.common import DataType, JsonObject
+
+if TYPE_CHECKING:
+    from pydantic_tensorstore.kvstore.base import KvStoreSpec
+    from pydantic_tensorstore.types.common import JsonObject
 
 
 class NeuroglancerPrecomputedSpec(BaseDriverSpec):
@@ -17,7 +19,8 @@ class NeuroglancerPrecomputedSpec(BaseDriverSpec):
     Supports the Neuroglancer Precomputed format used for large-scale
     visualization of volumetric data in the Neuroglancer viewer.
 
-    Attributes:
+    Attributes
+    ----------
         driver: Must be "neuroglancer_precomputed"
         kvstore: Key-value store for data storage
         path: Path within the kvstore
@@ -29,7 +32,7 @@ class NeuroglancerPrecomputedSpec(BaseDriverSpec):
         >>> spec = NeuroglancerPrecomputedSpec(
         ...     driver="neuroglancer_precomputed",
         ...     kvstore={"driver": "file", "path": "/data/precomputed/"},
-        ...     scale_index=0
+        ...     scale_index=0,
         ... )
     """
 
@@ -40,7 +43,7 @@ class NeuroglancerPrecomputedSpec(BaseDriverSpec):
         description="Neuroglancer Precomputed driver identifier",
     )
 
-    kvstore: Union[KvStoreSpec, JsonObject] = Field(
+    kvstore: KvStoreSpec | JsonObject = Field(
         description="Key-value store for data storage",
     )
 
@@ -49,25 +52,25 @@ class NeuroglancerPrecomputedSpec(BaseDriverSpec):
         description="Path within the kvstore",
     )
 
-    scale_index: Optional[int] = Field(
+    scale_index: int | None = Field(
         default=None,
         description="Index of the scale to use from the multiscale pyramid",
         ge=0,
     )
 
-    multiscale_metadata: Optional[dict[str, Any]] = Field(
+    multiscale_metadata: dict[str, Any] | None = Field(
         default=None,
         description="Multiscale metadata configuration",
     )
 
-    scale_metadata: Optional[dict[str, Any]] = Field(
+    scale_metadata: dict[str, Any] | None = Field(
         default=None,
         description="Scale-specific metadata",
     )
 
     @field_validator("kvstore", mode="before")
     @classmethod
-    def validate_kvstore(cls, v: Any) -> Union[KvStoreSpec, JsonObject]:
+    def validate_kvstore(cls, v: Any) -> KvStoreSpec | JsonObject:
         """Validate kvstore specification."""
         if isinstance(v, dict):
             if "driver" not in v:

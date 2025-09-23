@@ -3,17 +3,16 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Annotated, Any, Dict, List, Literal, Union
+from typing import Annotated, Any, Literal, TypeAlias
 
 from pydantic import BaseModel, Field, StringConstraints
-from typing_extensions import TypeAlias
 
 # Basic index types
 DimensionIndex: TypeAlias = int
 Index: TypeAlias = int
-Shape: TypeAlias = List[int]
-ChunkShape: TypeAlias = List[Union[int, None]]
-DomainShape: TypeAlias = List[Union[int, Literal["*"]]]
+Shape: TypeAlias = list[int]
+ChunkShape: TypeAlias = list[int | None]
+DomainShape: TypeAlias = list[int | Literal["*"]]
 
 
 class DataType(str, Enum):
@@ -113,5 +112,5 @@ DriverName = Annotated[str, StringConstraints(pattern=r"^[a-zA-Z][a-zA-Z0-9_]*$"
 ContextResourceName = Annotated[str, StringConstraints(min_length=1)]
 
 # Common JSON-like types
-JsonValue: TypeAlias = Union[str, int, float, bool, None, Dict[str, Any], List[Any]]
-JsonObject: TypeAlias = Dict[str, JsonValue]
+JsonValue: TypeAlias = str | int | float | bool | None | dict[str, Any] | list[Any]
+JsonObject: TypeAlias = dict[str, JsonValue]

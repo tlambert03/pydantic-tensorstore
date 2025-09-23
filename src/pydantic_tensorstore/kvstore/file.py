@@ -15,15 +15,13 @@ class FileKvStoreSpec(BaseKvStoreSpec):
 
     Stores keys as files in a local or network-mounted file system.
 
-    Attributes:
+    Attributes
+    ----------
         driver: Must be "file"
         path: Base path for file storage
 
     Example:
-        >>> kvstore = FileKvStoreSpec(
-        ...     driver="file",
-        ...     path="/tmp/tensorstore_data/"
-        ... )
+        >>> kvstore = FileKvStoreSpec(driver="file", path="/tmp/tensorstore_data/")
     """
 
     model_config = {"extra": "forbid"}

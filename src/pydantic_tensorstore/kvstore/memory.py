@@ -15,16 +15,14 @@ class MemoryKvStoreSpec(BaseKvStoreSpec):
     Provides a simple in-memory key-value store for testing and temporary data.
     Data is not persisted and is lost when the process ends.
 
-    Attributes:
+    Attributes
+    ----------
         driver: Must be "memory"
         path: Path prefix for keys (optional)
 
     Example:
         >>> kvstore = MemoryKvStoreSpec(driver="memory")
-        >>> kvstore_with_path = MemoryKvStoreSpec(
-        ...     driver="memory",
-        ...     path="my_data/"
-        ... )
+        >>> kvstore_with_path = MemoryKvStoreSpec(driver="memory", path="my_data/")
     """
 
     model_config = {"extra": "forbid"}

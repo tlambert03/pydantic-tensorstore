@@ -1,10 +1,10 @@
 """Validation utilities for TensorStore specifications."""
 
 from pydantic_tensorstore.validation.errors import (
-    TensorStoreValidationError,
     DriverValidationError,
-    SchemaValidationError,
     KvStoreValidationError,
+    SchemaValidationError,
+    TensorStoreValidationError,
 )
 from pydantic_tensorstore.validation.validators import (
     TensorStoreValidator,
@@ -13,10 +13,10 @@ from pydantic_tensorstore.validation.validators import (
 )
 
 __all__ = [
-    "TensorStoreValidationError",
     "DriverValidationError",
-    "SchemaValidationError",
     "KvStoreValidationError",
+    "SchemaValidationError",
+    "TensorStoreValidationError",
     "TensorStoreValidator",
     "validate_spec",
     "validate_spec_dict",

@@ -6,11 +6,12 @@ supporting operations like slicing, transposition, and broadcasting.
 
 from __future__ import annotations
 
-from typing import Any, List, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from pydantic_tensorstore.types.common import DimensionIndex, Index, Shape
+if TYPE_CHECKING:
+    from pydantic_tensorstore.types.common import DimensionIndex, Index, Shape
 
 
 class DimensionSpec(BaseModel):
@@ -18,18 +19,18 @@ class DimensionSpec(BaseModel):
 
     model_config = {"extra": "forbid"}
 
-    inclusive_min: Optional[Index] = Field(
+    inclusive_min: Index | None = Field(
         default=None, description="Inclusive lower bound"
     )
-    exclusive_max: Optional[Index] = Field(
+    exclusive_max: Index | None = Field(
         default=None, description="Exclusive upper bound"
     )
-    size: Optional[Index] = Field(default=None, description="Size of the dimension")
-    label: Optional[str] = Field(default=None, description="Dimension label")
+    size: Index | None = Field(default=None, description="Size of the dimension")
+    label: str | None = Field(default=None, description="Dimension label")
 
     @field_validator("size", mode="before")
     @classmethod
-    def validate_size(cls, v: Any) -> Optional[Index]:
+    def validate_size(cls, v: Any) -> Index | None:
         """Validate dimension size."""
         if v is not None and v <= 0:
             raise ValueError("Dimension size must be positive")
@@ -57,7 +58,8 @@ class IndexDomain(BaseModel):
     Defines the coordinate space for array indexing, including
     bounds, labels, and implicit dimensions.
 
-    Attributes:
+    Attributes
+    ----------
         shape: Size of each dimension
         inclusive_min: Lower bounds (inclusive)
         exclusive_max: Upper bounds (exclusive)
@@ -65,35 +67,32 @@ class IndexDomain(BaseModel):
         implicit: Whether dimensions are implicit
 
     Example:
-        >>> domain = IndexDomain(
-        ...     shape=[100, 200],
-        ...     labels=["height", "width"]
-        ... )
+        >>> domain = IndexDomain(shape=[100, 200], labels=["height", "width"])
     """
 
     model_config = {"extra": "forbid", "validate_assignment": True}
 
-    shape: Optional[Shape] = Field(default=None, description="Shape of each dimension")
+    shape: Shape | None = Field(default=None, description="Shape of each dimension")
 
-    inclusive_min: Optional[List[Index]] = Field(
+    inclusive_min: list[Index] | None = Field(
         default=None, description="Inclusive lower bounds"
     )
 
-    exclusive_max: Optional[List[Index]] = Field(
+    exclusive_max: list[Index] | None = Field(
         default=None, description="Exclusive upper bounds"
     )
 
-    labels: Optional[List[Optional[str]]] = Field(
+    labels: list[str | None] | None = Field(
         default=None, description="Dimension labels"
     )
 
-    implicit: Optional[List[bool]] = Field(
+    implicit: list[bool] | None = Field(
         default=None, description="Implicit dimension flags"
     )
 
     @field_validator("shape", mode="before")
     @classmethod
-    def validate_shape(cls, v: Any) -> Optional[Shape]:
+    def validate_shape(cls, v: Any) -> Shape | None:
         """Validate shape values."""
         if v is None:
             return None
@@ -101,7 +100,9 @@ class IndexDomain(BaseModel):
             raise ValueError("Shape must be a list")
         for i, dim_size in enumerate(v):
             if dim_size <= 0:
-                raise ValueError(f"Shape dimension {i} must be positive, got {dim_size}")
+                raise ValueError(
+                    f"Shape dimension {i} must be positive, got {dim_size}"
+                )
         return v
 
     def model_post_init(self, __context: Any) -> None:
@@ -155,7 +156,7 @@ class IndexDomain(BaseModel):
             and self.exclusive_max is not None
         ):
             for i, (size, min_val, max_val) in enumerate(
-                zip(self.shape, self.inclusive_min, self.exclusive_max)
+                zip(self.shape, self.inclusive_min, self.exclusive_max, strict=False)
             ):
                 computed_size = max_val - min_val
                 if computed_size != size:
@@ -165,7 +166,7 @@ class IndexDomain(BaseModel):
                     )
 
     @property
-    def rank(self) -> Optional[DimensionIndex]:
+    def rank(self) -> DimensionIndex | None:
         """Get the rank (number of dimensions)."""
         if self.shape is not None:
             return len(self.shape)
@@ -185,25 +186,21 @@ class OutputIndexMap(BaseModel):
 
     model_config = {"extra": "forbid"}
 
-    input_dimension: Optional[DimensionIndex] = Field(
+    input_dimension: DimensionIndex | None = Field(
         default=None, description="Input dimension index"
     )
     offset: Index = Field(default=0, description="Offset value")
     stride: Index = Field(default=1, description="Stride value")
-    index_array: Optional[List[Index]] = Field(
+    index_array: list[Index] | None = Field(
         default=None, description="Index array for advanced indexing"
     )
 
     def model_post_init(self, __context: Any) -> None:
         """Validate output index map configuration."""
         if self.input_dimension is not None and self.index_array is not None:
-            raise ValueError(
-                "Cannot specify both input_dimension and index_array"
-            )
+            raise ValueError("Cannot specify both input_dimension and index_array")
         if self.input_dimension is None and self.index_array is None:
-            raise ValueError(
-                "Must specify either input_dimension or index_array"
-            )
+            raise ValueError("Must specify either input_dimension or index_array")
         if self.stride == 0:
             raise ValueError("Stride cannot be zero")
 
@@ -214,7 +211,8 @@ class IndexTransform(BaseModel):
     Maps coordinates from an input space to an output space,
     supporting operations like slicing, broadcasting, and reordering.
 
-    Attributes:
+    Attributes
+    ----------
         input_rank: Number of input dimensions
         output_rank: Number of output dimensions
         input_shape: Shape of input domain
@@ -226,40 +224,31 @@ class IndexTransform(BaseModel):
     Example:
         >>> transform = IndexTransform(
         ...     input_shape=[50, 100],
-        ...     output=[
-        ...         {"input_dimension": 0},
-        ...         {"input_dimension": 1, "offset": 10}
-        ...     ]
+        ...     output=[{"input_dimension": 0}, {"input_dimension": 1, "offset": 10}],
         ... )
     """
 
     model_config = {"extra": "forbid", "validate_assignment": True}
 
-    input_rank: Optional[DimensionIndex] = Field(
-        default=None, description="Input rank"
-    )
+    input_rank: DimensionIndex | None = Field(default=None, description="Input rank")
 
-    output_rank: Optional[DimensionIndex] = Field(
-        default=None, description="Output rank"
-    )
+    output_rank: DimensionIndex | None = Field(default=None, description="Output rank")
 
-    input_shape: Optional[Shape] = Field(
-        default=None, description="Input domain shape"
-    )
+    input_shape: Shape | None = Field(default=None, description="Input domain shape")
 
-    input_labels: Optional[List[Optional[str]]] = Field(
+    input_labels: list[str | None] | None = Field(
         default=None, description="Input dimension labels"
     )
 
-    input_inclusive_min: Optional[List[Index]] = Field(
+    input_inclusive_min: list[Index] | None = Field(
         default=None, description="Input inclusive lower bounds"
     )
 
-    input_exclusive_max: Optional[List[Index]] = Field(
+    input_exclusive_max: list[Index] | None = Field(
         default=None, description="Input exclusive upper bounds"
     )
 
-    output: Optional[List[OutputIndexMap]] = Field(
+    output: list[OutputIndexMap] | None = Field(
         default=None, description="Output index maps"
     )
 

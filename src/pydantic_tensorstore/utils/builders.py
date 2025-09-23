@@ -2,19 +2,20 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 
-import numpy as np
-
-from pydantic_tensorstore.core.context import Context
-from pydantic_tensorstore.core.schema import Schema
 from pydantic_tensorstore.core.spec import TensorStoreSpec
 from pydantic_tensorstore.drivers.array import ArraySpec
-from pydantic_tensorstore.drivers.zarr import ZarrSpec
 from pydantic_tensorstore.drivers.n5 import N5Spec
-from pydantic_tensorstore.kvstore.memory import MemoryKvStoreSpec
-from pydantic_tensorstore.kvstore.file import FileKvStoreSpec
-from pydantic_tensorstore.types.common import DataType, JsonObject
+from pydantic_tensorstore.drivers.zarr import ZarrSpec
+
+if TYPE_CHECKING:
+    import numpy as np
+
+    from pydantic_tensorstore.core.context import Context
+    from pydantic_tensorstore.kvstore.file import FileKvStoreSpec
+    from pydantic_tensorstore.kvstore.memory import MemoryKvStoreSpec
+    from pydantic_tensorstore.types.common import DataType
 
 
 class SpecBuilder:
@@ -25,12 +26,13 @@ class SpecBuilder:
 
     Example:
         >>> builder = SpecBuilder()
-        >>> spec = (builder
-        ...     .driver("zarr")
+        >>> spec = (
+        ...     builder.driver("zarr")
         ...     .kvstore("memory")
         ...     .dtype("float32")
         ...     .shape([100, 200])
-        ...     .build())
+        ...     .build()
+        ... )
     """
 
     def __init__(self) -> None:
@@ -42,7 +44,7 @@ class SpecBuilder:
         self._spec_data["driver"] = driver_name
         return self
 
-    def dtype(self, dtype: Union[str, DataType]) -> SpecBuilder:
+    def dtype(self, dtype: str | DataType) -> SpecBuilder:
         """Set the data type."""
         if "schema" not in self._spec_data:
             self._spec_data["schema"] = {}
@@ -60,7 +62,7 @@ class SpecBuilder:
 
     def kvstore(
         self,
-        kvstore: Union[str, dict[str, Any], MemoryKvStoreSpec, FileKvStoreSpec],
+        kvstore: str | dict[str, Any] | MemoryKvStoreSpec | FileKvStoreSpec,
     ) -> SpecBuilder:
         """Set the key-value store."""
         if isinstance(kvstore, str):
@@ -79,7 +81,7 @@ class SpecBuilder:
             self._spec_data["kvstore"] = kvstore.model_dump()
         return self
 
-    def context(self, context: Union[dict[str, Any], Context]) -> SpecBuilder:
+    def context(self, context: dict[str, Any] | Context) -> SpecBuilder:
         """Set the context configuration."""
         if isinstance(context, dict):
             self._spec_data["context"] = context
@@ -138,32 +140,31 @@ class ArraySpecBuilder:
 
     Example:
         >>> builder = ArraySpecBuilder()
-        >>> spec = (builder
-        ...     .array([[1, 2], [3, 4]])
-        ...     .dtype("int32")
-        ...     .build())
+        >>> spec = builder.array([[1, 2], [3, 4]]).dtype("int32").build()
     """
 
     def __init__(self) -> None:
         """Initialize the builder."""
         self._spec_data: dict[str, Any] = {"driver": "array"}
 
-    def array(self, array_data: Union[list[Any], np.ndarray]) -> ArraySpecBuilder:
+    def array(self, array_data: list[Any] | np.ndarray) -> ArraySpecBuilder:
         """Set the array data."""
         self._spec_data["array"] = array_data
         return self
 
-    def dtype(self, dtype: Union[str, DataType]) -> ArraySpecBuilder:
+    def dtype(self, dtype: str | DataType) -> ArraySpecBuilder:
         """Set the data type."""
         self._spec_data["dtype"] = str(dtype)
         return self
 
-    def data_copy_concurrency(self, concurrency: Union[str, dict[str, Any]]) -> ArraySpecBuilder:
+    def data_copy_concurrency(
+        self, concurrency: str | dict[str, Any]
+    ) -> ArraySpecBuilder:
         """Set data copy concurrency."""
         self._spec_data["data_copy_concurrency"] = concurrency
         return self
 
-    def context(self, context: Union[dict[str, Any], Context]) -> ArraySpecBuilder:
+    def context(self, context: dict[str, Any] | Context) -> ArraySpecBuilder:
         """Set the context configuration."""
         if isinstance(context, dict):
             self._spec_data["context"] = context
@@ -181,12 +182,13 @@ class ZarrSpecBuilder:
 
     Example:
         >>> builder = ZarrSpecBuilder()
-        >>> spec = (builder
-        ...     .kvstore("memory")
+        >>> spec = (
+        ...     builder.kvstore("memory")
         ...     .path("my_array.zarr")
         ...     .chunks([64, 64])
         ...     .compression({"id": "blosc"})
-        ...     .build())
+        ...     .build()
+        ... )
     """
 
     def __init__(self) -> None:
@@ -195,7 +197,7 @@ class ZarrSpecBuilder:
 
     def kvstore(
         self,
-        kvstore: Union[str, dict[str, Any], MemoryKvStoreSpec, FileKvStoreSpec],
+        kvstore: str | dict[str, Any] | MemoryKvStoreSpec | FileKvStoreSpec,
     ) -> ZarrSpecBuilder:
         """Set the key-value store."""
         if isinstance(kvstore, str):
@@ -228,7 +230,7 @@ class ZarrSpecBuilder:
         self._spec_data["metadata"]["compressor"] = compressor
         return self
 
-    def fill_value(self, fill_value: Union[int, float, str, bool]) -> ZarrSpecBuilder:
+    def fill_value(self, fill_value: int | float | str | bool) -> ZarrSpecBuilder:
         """Set the fill value."""
         if "metadata" not in self._spec_data:
             self._spec_data["metadata"] = {}
@@ -259,14 +261,15 @@ class N5SpecBuilder:
 
     Example:
         >>> builder = N5SpecBuilder()
-        >>> spec = (builder
-        ...     .kvstore("/data/n5/")
+        >>> spec = (
+        ...     builder.kvstore("/data/n5/")
         ...     .path("dataset")
         ...     .dimensions([1000, 1000, 100])
         ...     .block_size([64, 64, 64])
         ...     .data_type("uint16")
         ...     .compression({"type": "gzip"})
-        ...     .build())
+        ...     .build()
+        ... )
     """
 
     def __init__(self) -> None:
@@ -275,7 +278,7 @@ class N5SpecBuilder:
 
     def kvstore(
         self,
-        kvstore: Union[str, dict[str, Any], MemoryKvStoreSpec, FileKvStoreSpec],
+        kvstore: str | dict[str, Any] | MemoryKvStoreSpec | FileKvStoreSpec,
     ) -> N5SpecBuilder:
         """Set the key-value store."""
         if isinstance(kvstore, str):

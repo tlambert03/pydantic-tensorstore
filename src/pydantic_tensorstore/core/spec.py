@@ -6,17 +6,15 @@ Defines the main TensorStoreSpec class and driver registry system.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any
 
 from pydantic import BaseModel, Discriminator, Field, Tag, field_validator
-from typing_extensions import Annotated
-
-from pydantic_tensorstore.types.common import DriverName, JsonObject
 
 if TYPE_CHECKING:
     from pydantic_tensorstore.core.context import Context
     from pydantic_tensorstore.core.schema import Schema
     from pydantic_tensorstore.core.transform import IndexTransform
+    from pydantic_tensorstore.types.common import DriverName, JsonObject
 
 
 class BaseDriverSpec(BaseModel, ABC):
@@ -25,7 +23,8 @@ class BaseDriverSpec(BaseModel, ABC):
     Each TensorStore driver implements its own spec by inheriting from this class.
     The driver field is used for discriminated union dispatch.
 
-    Attributes:
+    Attributes
+    ----------
         driver: The driver identifier (required for all specs)
         context: Context resource configuration
         schema: Schema constraints and metadata
@@ -41,17 +40,17 @@ class BaseDriverSpec(BaseModel, ABC):
 
     driver: DriverName = Field(description="TensorStore driver identifier")
 
-    context: Optional[Union[Context, JsonObject]] = Field(
+    context: Context | JsonObject | None = Field(
         default=None,
         description="Context resource configuration",
     )
 
-    schema: Optional[Union[Schema, JsonObject]] = Field(
+    schema: Schema | JsonObject | None = Field(
         default=None,
         description="Schema constraints",
     )
 
-    transform: Optional[Union[IndexTransform, JsonObject]] = Field(
+    transform: IndexTransform | JsonObject | None = Field(
         default=None,
         description="Index transform",
     )
@@ -104,12 +103,12 @@ def _import_driver_specs() -> dict[str, type[BaseDriverSpec]]:
     """Import all driver specs and return a mapping."""
     try:
         from pydantic_tensorstore.drivers.array import ArraySpec
-        from pydantic_tensorstore.drivers.zarr import ZarrSpec
-        from pydantic_tensorstore.drivers.zarr3 import Zarr3Spec
         from pydantic_tensorstore.drivers.n5 import N5Spec
         from pydantic_tensorstore.drivers.neuroglancer_precomputed import (
             NeuroglancerPrecomputedSpec,
         )
+        from pydantic_tensorstore.drivers.zarr import ZarrSpec
+        from pydantic_tensorstore.drivers.zarr3 import Zarr3Spec
 
         return {
             "array": ArraySpec,
@@ -129,14 +128,12 @@ _driver_specs = _import_driver_specs()
 # Create annotated types for each driver
 _driver_annotations = []
 for driver_name, spec_class in _driver_specs.items():
-    _driver_annotations.append(
-        Annotated[spec_class, Tag(driver_name)]
-    )
+    _driver_annotations.append(Annotated[spec_class, Tag(driver_name)])
 
 # Create the discriminated union type
 if _driver_annotations:
     TensorStoreSpec = Annotated[
-        Union[tuple(_driver_annotations)],
+        tuple(_driver_annotations),
         Discriminator(get_driver_discriminator),
     ]
 else:
@@ -157,10 +154,12 @@ class SpecValidator:
         Args:
             spec_dict: Raw specification dictionary
 
-        Returns:
+        Returns
+        -------
             Validated and potentially modified specification dictionary
 
-        Raises:
+        Raises
+        ------
             ValueError: If the specification is invalid
         """
         if not isinstance(spec_dict, dict):
@@ -182,8 +181,7 @@ class SpecValidator:
             except Exception:
                 available_drivers = list(_driver_specs.keys())
                 raise ValueError(
-                    f"Unknown driver '{driver}'. "
-                    f"Available drivers: {available_drivers}"
+                    f"Unknown driver '{driver}'. Available drivers: {available_drivers}"
                 )
 
         # Driver-specific validation

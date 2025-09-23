@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, Union
+from typing import Any, Literal
 
 import numpy as np
 from pydantic import Field, field_validator
 
-from pydantic_tensorstore.core.context import Context
 from pydantic_tensorstore.core.spec import BaseDriverSpec
 from pydantic_tensorstore.types.common import DataType, JsonObject
 
@@ -18,7 +17,8 @@ class ArraySpec(BaseDriverSpec):
     Creates a TensorStore backed by an in-memory NumPy-like array.
     Useful for testing and small datasets that fit in memory.
 
-    Attributes:
+    Attributes
+    ----------
         driver: Must be "array"
         array: Nested list or NumPy array containing the data
         dtype: Data type of the array elements
@@ -26,16 +26,12 @@ class ArraySpec(BaseDriverSpec):
 
     Example:
         >>> spec = ArraySpec(
-        ...     driver="array",
-        ...     array=[[1, 2, 3], [4, 5, 6]],
-        ...     dtype="int32"
+        ...     driver="array", array=[[1, 2, 3], [4, 5, 6]], dtype="int32"
         ... )
         >>> # With NumPy array
         >>> import numpy as np
         >>> spec = ArraySpec(
-        ...     driver="array",
-        ...     array=np.random.randn(10, 20),
-        ...     dtype="float64"
+        ...     driver="array", array=np.random.randn(10, 20), dtype="float64"
         ... )
     """
 
@@ -46,7 +42,7 @@ class ArraySpec(BaseDriverSpec):
         description="Array driver identifier",
     )
 
-    array: Union[list[Any], np.ndarray] = Field(
+    array: list[Any] | np.ndarray = Field(
         description="Nested array data or NumPy array",
     )
 
@@ -54,14 +50,14 @@ class ArraySpec(BaseDriverSpec):
         description="Data type of array elements",
     )
 
-    data_copy_concurrency: Union[str, JsonObject, None] = Field(
+    data_copy_concurrency: str | JsonObject | None = Field(
         default="data_copy_concurrency",
         description="Data copy concurrency resource",
     )
 
     @field_validator("array", mode="before")
     @classmethod
-    def validate_array_data(cls, v: Any) -> Union[list[Any], np.ndarray]:
+    def validate_array_data(cls, v: Any) -> list[Any] | np.ndarray:
         """Validate array data structure."""
         if isinstance(v, np.ndarray):
             return v
@@ -72,7 +68,9 @@ class ArraySpec(BaseDriverSpec):
                 raise ValueError("Array cannot be empty")
 
             # Check that all rows have the same length (for 2D+)
-            def check_rectangular(arr: list[Any], depth: int = 0) -> tuple[list[int], int]:
+            def check_rectangular(
+                arr: list[Any], depth: int = 0
+            ) -> tuple[list[int], int]:
                 """Check if nested list is rectangular and return shape."""
                 if not isinstance(arr, list):
                     return [], depth
@@ -85,7 +83,7 @@ class ArraySpec(BaseDriverSpec):
                 if isinstance(first_elem, list):
                     # Recursive case - check all sublists have same shape
                     first_shape, first_depth = check_rectangular(first_elem, depth + 1)
-                    shape = [len(arr)] + first_shape
+                    shape = [len(arr), *first_shape]
 
                     for i, elem in enumerate(arr[1:], 1):
                         if not isinstance(elem, list):
@@ -105,7 +103,7 @@ class ArraySpec(BaseDriverSpec):
                     # Base case - this is a 1D array of scalars
                     return [len(arr)], depth + 1
 
-            shape, depth = check_rectangular(v)
+            _shape, _depth = check_rectangular(v)
             return v
 
         try:
@@ -124,9 +122,7 @@ class ArraySpec(BaseDriverSpec):
                 return DataType(v)
             except ValueError:
                 valid_types = [dt.value for dt in DataType]
-                raise ValueError(
-                    f"Invalid dtype '{v}'. Valid types: {valid_types}"
-                )
+                raise ValueError(f"Invalid dtype '{v}'. Valid types: {valid_types}")
         return v
 
     def get_driver_kind(self) -> str:

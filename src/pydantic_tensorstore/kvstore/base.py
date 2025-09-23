@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Union
+from typing import TYPE_CHECKING, Annotated, Any
 
 from pydantic import BaseModel, Discriminator, Field
-from typing_extensions import Annotated
 
-from pydantic_tensorstore.types.common import DriverName
+if TYPE_CHECKING:
+    from pydantic_tensorstore.types.common import DriverName
 
 
 class BaseKvStoreSpec(BaseModel, ABC):
@@ -17,7 +17,8 @@ class BaseKvStoreSpec(BaseModel, ABC):
     Key-value stores provide the underlying storage layer for many TensorStore
     drivers, abstracting over local files, cloud storage, databases, etc.
 
-    Attributes:
+    Attributes
+    ----------
         driver: The kvstore driver identifier
         path: Path within the key-value store
 
@@ -60,8 +61,8 @@ def get_kvstore_discriminator(v: Any) -> str:
 def _import_kvstore_specs() -> dict[str, type[BaseKvStoreSpec]]:
     """Import all kvstore specs and return a mapping."""
     try:
-        from pydantic_tensorstore.kvstore.memory import MemoryKvStoreSpec
         from pydantic_tensorstore.kvstore.file import FileKvStoreSpec
+        from pydantic_tensorstore.kvstore.memory import MemoryKvStoreSpec
 
         return {
             "memory": MemoryKvStoreSpec,
@@ -75,19 +76,16 @@ def _import_kvstore_specs() -> dict[str, type[BaseKvStoreSpec]]:
 _kvstore_specs = _import_kvstore_specs()
 
 if _kvstore_specs:
-    from typing import get_args
-
     # Create annotated types for each kvstore
     _kvstore_annotations = []
     for driver_name, spec_class in _kvstore_specs.items():
         from pydantic import Tag
-        _kvstore_annotations.append(
-            Annotated[spec_class, Tag(driver_name)]
-        )
+
+        _kvstore_annotations.append(Annotated[spec_class, Tag(driver_name)])
 
     # Create the discriminated union type
     KvStoreSpec = Annotated[
-        Union[tuple(_kvstore_annotations)],
+        tuple(_kvstore_annotations),
         Discriminator(get_kvstore_discriminator),
     ]
 else:

@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import Field, field_validator
 
 from pydantic_tensorstore.core.spec import BaseDriverSpec
-from pydantic_tensorstore.kvstore.base import KvStoreSpec
 from pydantic_tensorstore.types.common import DataType, JsonObject
+
+if TYPE_CHECKING:
+    from pydantic_tensorstore.kvstore.base import KvStoreSpec
 
 
 class N5Metadata(BaseDriverSpec):
@@ -24,11 +26,11 @@ class N5Metadata(BaseDriverSpec):
         description="Array dimensions",
     )
 
-    blockSize: list[int] = Field(  # noqa: N815
+    blockSize: list[int] = Field(
         description="Block (chunk) size for each dimension",
     )
 
-    dataType: str = Field(  # noqa: N815
+    dataType: str = Field(
         description="N5 data type specification",
     )
 
@@ -37,22 +39,22 @@ class N5Metadata(BaseDriverSpec):
         description="Compression configuration",
     )
 
-    axes: Optional[list[str]] = Field(
+    axes: list[str] | None = Field(
         default=None,
         description="Axis labels for each dimension",
     )
 
-    units: Optional[list[str]] = Field(
+    units: list[str] | None = Field(
         default=None,
         description="Physical units for each dimension",
     )
 
-    resolution: Optional[list[float]] = Field(
+    resolution: list[float] | None = Field(
         default=None,
         description="Resolution (pixel size) for each dimension",
     )
 
-    offset: Optional[list[float]] = Field(
+    offset: list[float] | None = Field(
         default=None,
         description="Offset for each dimension",
     )
@@ -79,9 +81,16 @@ class N5Metadata(BaseDriverSpec):
 
         # N5 uses specific type names
         valid_types = {
-            "uint8", "uint16", "uint32", "uint64",
-            "int8", "int16", "int32", "int64",
-            "float32", "float64"
+            "uint8",
+            "uint16",
+            "uint32",
+            "uint64",
+            "int8",
+            "int16",
+            "int32",
+            "int64",
+            "float32",
+            "float64",
         }
 
         if v not in valid_types:
@@ -100,7 +109,8 @@ class N5Spec(BaseDriverSpec):
     N5 (Not HDF5) is a chunked array storage format that's popular
     in scientific computing, especially for large-scale image data.
 
-    Attributes:
+    Attributes
+    ----------
         driver: Must be "n5"
         kvstore: Key-value store for data storage
         path: Path within the kvstore for this array
@@ -115,8 +125,8 @@ class N5Spec(BaseDriverSpec):
         ...         "dimensions": [1000, 1000, 100],
         ...         "blockSize": [64, 64, 64],
         ...         "dataType": "uint16",
-        ...         "compression": {"type": "gzip"}
-        ...     }
+        ...         "compression": {"type": "gzip"},
+        ...     },
         ... )
     """
 
@@ -127,7 +137,7 @@ class N5Spec(BaseDriverSpec):
         description="N5 driver identifier",
     )
 
-    kvstore: Union[KvStoreSpec, JsonObject] = Field(
+    kvstore: KvStoreSpec | JsonObject = Field(
         description="Key-value store for data storage",
     )
 
@@ -136,14 +146,14 @@ class N5Spec(BaseDriverSpec):
         description="Path within the kvstore for this dataset",
     )
 
-    metadata: Optional[Union[N5Metadata, JsonObject]] = Field(
+    metadata: N5Metadata | JsonObject | None = Field(
         default=None,
         description="N5 metadata specification",
     )
 
     @field_validator("kvstore", mode="before")
     @classmethod
-    def validate_kvstore(cls, v: Any) -> Union[KvStoreSpec, JsonObject]:
+    def validate_kvstore(cls, v: Any) -> KvStoreSpec | JsonObject:
         """Validate kvstore specification."""
         if isinstance(v, dict):
             if "driver" not in v:

@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import Field, field_validator
 
 from pydantic_tensorstore.core.spec import BaseDriverSpec
-from pydantic_tensorstore.kvstore.base import KvStoreSpec
-from pydantic_tensorstore.types.common import DataType, JsonObject
+
+if TYPE_CHECKING:
+    from pydantic_tensorstore.kvstore.base import KvStoreSpec
+    from pydantic_tensorstore.types.common import JsonObject
 
 
 class ZarrMetadata(BaseDriverSpec):
@@ -20,22 +22,22 @@ class ZarrMetadata(BaseDriverSpec):
 
     model_config = {"extra": "allow"}  # Allow additional zarr metadata fields
 
-    chunks: Optional[list[int]] = Field(
+    chunks: list[int] | None = Field(
         default=None,
         description="Chunk shape for storage",
     )
 
-    compressor: Optional[JsonObject] = Field(
+    compressor: JsonObject | None = Field(
         default=None,
         description="Compression configuration",
     )
 
-    filters: Optional[list[JsonObject]] = Field(
+    filters: list[JsonObject] | None = Field(
         default=None,
         description="Filter pipeline configuration",
     )
 
-    fill_value: Optional[Union[int, float, str, bool]] = Field(
+    fill_value: int | float | str | bool | None = Field(
         default=None,
         description="Fill value for uninitialized chunks",
     )
@@ -57,7 +59,7 @@ class ZarrMetadata(BaseDriverSpec):
 
     @field_validator("chunks", mode="before")
     @classmethod
-    def validate_chunks(cls, v: Any) -> Optional[list[int]]:
+    def validate_chunks(cls, v: Any) -> list[int] | None:
         """Validate chunk specification."""
         if v is None:
             return None
@@ -67,7 +69,9 @@ class ZarrMetadata(BaseDriverSpec):
 
         for i, chunk_size in enumerate(v):
             if not isinstance(chunk_size, int) or chunk_size <= 0:
-                raise ValueError(f"Chunk size at dimension {i} must be a positive integer")
+                raise ValueError(
+                    f"Chunk size at dimension {i} must be a positive integer"
+                )
 
         return v
 
@@ -82,7 +86,8 @@ class ZarrSpec(BaseDriverSpec):
     Zarr is a format for storing chunked, compressed arrays.
     This spec supports the Zarr v2 specification.
 
-    Attributes:
+    Attributes
+    ----------
         driver: Must be "zarr"
         kvstore: Key-value store for data storage
         path: Path within the kvstore for this array
@@ -94,14 +99,14 @@ class ZarrSpec(BaseDriverSpec):
         ...     kvstore={"driver": "memory"},
         ...     metadata={
         ...         "chunks": [64, 64],
-        ...         "compressor": {"id": "blosc", "cname": "lz4"}
-        ...     }
+        ...         "compressor": {"id": "blosc", "cname": "lz4"},
+        ...     },
         ... )
         >>> # With file storage
         >>> spec = ZarrSpec(
         ...     driver="zarr",
         ...     kvstore={"driver": "file", "path": "/data/arrays/"},
-        ...     path="my_array.zarr"
+        ...     path="my_array.zarr",
         ... )
     """
 
@@ -112,7 +117,7 @@ class ZarrSpec(BaseDriverSpec):
         description="Zarr driver identifier",
     )
 
-    kvstore: Union[KvStoreSpec, JsonObject] = Field(
+    kvstore: KvStoreSpec | JsonObject = Field(
         description="Key-value store for data storage",
     )
 
@@ -121,24 +126,24 @@ class ZarrSpec(BaseDriverSpec):
         description="Path within the kvstore for this array",
     )
 
-    metadata: Optional[Union[ZarrMetadata, JsonObject]] = Field(
+    metadata: ZarrMetadata | JsonObject | None = Field(
         default=None,
         description="Zarr metadata specification",
     )
 
-    recheck_cached_data: Optional[bool] = Field(
+    recheck_cached_data: bool | None = Field(
         default=None,
         description="Whether to recheck cached data",
     )
 
-    recheck_cached_metadata: Optional[bool] = Field(
+    recheck_cached_metadata: bool | None = Field(
         default=None,
         description="Whether to recheck cached metadata",
     )
 
     @field_validator("kvstore", mode="before")
     @classmethod
-    def validate_kvstore(cls, v: Any) -> Union[KvStoreSpec, JsonObject]:
+    def validate_kvstore(cls, v: Any) -> KvStoreSpec | JsonObject:
         """Validate kvstore specification."""
         if isinstance(v, dict):
             if "driver" not in v:

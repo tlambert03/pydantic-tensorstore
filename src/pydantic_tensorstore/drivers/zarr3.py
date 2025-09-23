@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import Field, field_validator
 
 from pydantic_tensorstore.core.spec import BaseDriverSpec
-from pydantic_tensorstore.kvstore.base import KvStoreSpec
 from pydantic_tensorstore.types.common import DataType, JsonObject
+
+if TYPE_CHECKING:
+    from pydantic_tensorstore.kvstore.base import KvStoreSpec
 
 
 class Zarr3Metadata(BaseDriverSpec):
@@ -34,7 +36,7 @@ class Zarr3Metadata(BaseDriverSpec):
         description="Array shape",
     )
 
-    data_type: Union[DataType, str] = Field(
+    data_type: DataType | str = Field(
         description="Data type specification",
     )
 
@@ -47,17 +49,17 @@ class Zarr3Metadata(BaseDriverSpec):
         description="Chunk key encoding configuration",
     )
 
-    fill_value: Optional[Union[int, float, str, bool, list[Any]]] = Field(
+    fill_value: int | float | str | bool | list[Any] | None = Field(
         default=None,
         description="Fill value for uninitialized chunks",
     )
 
-    codecs: Optional[list[dict[str, Any]]] = Field(
+    codecs: list[dict[str, Any]] | None = Field(
         default=None,
         description="Codec pipeline for compression and encoding",
     )
 
-    dimension_names: Optional[list[Optional[str]]] = Field(
+    dimension_names: list[str | None] | None = Field(
         default=None,
         description="Names for each dimension",
     )
@@ -82,7 +84,7 @@ class Zarr3Metadata(BaseDriverSpec):
 
     @field_validator("data_type", mode="before")
     @classmethod
-    def validate_data_type(cls, v: Any) -> Union[DataType, str]:
+    def validate_data_type(cls, v: Any) -> DataType | str:
         """Validate data type specification."""
         if isinstance(v, str):
             # Try to convert to DataType enum if possible
@@ -104,7 +106,8 @@ class Zarr3Spec(BaseDriverSpec):
     Zarr v3 is the next generation of the Zarr format, featuring
     improved performance, sharding, and enhanced codec support.
 
-    Attributes:
+    Attributes
+    ----------
         driver: Must be "zarr3"
         kvstore: Key-value store for data storage
         path: Path within the kvstore for this array
@@ -119,9 +122,9 @@ class Zarr3Spec(BaseDriverSpec):
         ...         "data_type": "float32",
         ...         "chunk_grid": {
         ...             "name": "regular",
-        ...             "configuration": {"chunk_shape": [100, 200]}
-        ...         }
-        ...     }
+        ...             "configuration": {"chunk_shape": [100, 200]},
+        ...         },
+        ...     },
         ... )
     """
 
@@ -132,7 +135,7 @@ class Zarr3Spec(BaseDriverSpec):
         description="Zarr3 driver identifier",
     )
 
-    kvstore: Union[KvStoreSpec, JsonObject] = Field(
+    kvstore: KvStoreSpec | JsonObject = Field(
         description="Key-value store for data storage",
     )
 
@@ -141,14 +144,14 @@ class Zarr3Spec(BaseDriverSpec):
         description="Path within the kvstore for this array",
     )
 
-    metadata: Optional[Union[Zarr3Metadata, JsonObject]] = Field(
+    metadata: Zarr3Metadata | JsonObject | None = Field(
         default=None,
         description="Zarr v3 metadata specification",
     )
 
     @field_validator("kvstore", mode="before")
     @classmethod
-    def validate_kvstore(cls, v: Any) -> Union[KvStoreSpec, JsonObject]:
+    def validate_kvstore(cls, v: Any) -> KvStoreSpec | JsonObject:
         """Validate kvstore specification."""
         if isinstance(v, dict):
             if "driver" not in v:

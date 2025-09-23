@@ -9,10 +9,17 @@ from __future__ import annotations
 import numpy as np
 
 from pydantic_tensorstore import TensorStoreSpec
-from pydantic_tensorstore.drivers import ArraySpec, ZarrSpec, N5Spec
-from pydantic_tensorstore.utils.builders import SpecBuilder, ArraySpecBuilder, ZarrSpecBuilder
-from pydantic_tensorstore.utils.conversion import spec_to_json, spec_from_json
-from pydantic_tensorstore.utils.introspection import get_spec_info, list_registered_drivers
+from pydantic_tensorstore.drivers import ArraySpec, N5Spec, ZarrSpec
+from pydantic_tensorstore.utils.builders import (
+    ArraySpecBuilder,
+    SpecBuilder,
+    ZarrSpecBuilder,
+)
+from pydantic_tensorstore.utils.conversion import spec_from_json, spec_to_json
+from pydantic_tensorstore.utils.introspection import (
+    get_spec_info,
+    list_registered_drivers,
+)
 
 
 def example_array_spec():
@@ -20,28 +27,17 @@ def example_array_spec():
     print("=== Array Spec Examples ===")
 
     # Direct creation
-    array_spec = ArraySpec(
-        driver="array",
-        array=[[1, 2, 3], [4, 5, 6]],
-        dtype="int32"
-    )
+    array_spec = ArraySpec(driver="array", array=[[1, 2, 3], [4, 5, 6]], dtype="int32")
     print(f"Array spec shape: {array_spec.get_array_shape()}")
     print(f"Array spec ndim: {array_spec.get_array_ndim()}")
 
     # With NumPy array
     numpy_data = np.random.randn(10, 20).astype(np.float32)
-    numpy_spec = ArraySpec(
-        driver="array",
-        array=numpy_data,
-        dtype="float32"
-    )
+    numpy_spec = ArraySpec(driver="array", array=numpy_data, dtype="float32")
     print(f"NumPy spec shape: {numpy_spec.get_array_shape()}")
 
     # Using builder
-    builder_spec = (ArraySpecBuilder()
-                   .array([[7, 8], [9, 10]])
-                   .dtype("float64")
-                   .build())
+    builder_spec = ArraySpecBuilder().array([[7, 8], [9, 10]]).dtype("float64").build()
     print(f"Builder spec: {builder_spec.driver}")
 
 
@@ -57,8 +53,8 @@ def example_zarr_spec():
         metadata={
             "chunks": [64, 64],
             "compressor": {"id": "blosc", "cname": "lz4"},
-            "order": "C"
-        }
+            "order": "C",
+        },
     )
     print(f"Zarr spec path: {zarr_spec.get_effective_path()}")
 
@@ -66,17 +62,19 @@ def example_zarr_spec():
     file_zarr_spec = ZarrSpec(
         driver="zarr",
         kvstore={"driver": "file", "path": "/tmp/zarr_data/"},
-        path="dataset.zarr"
+        path="dataset.zarr",
     )
     print(f"File Zarr path: {file_zarr_spec.get_effective_path()}")
 
     # Using builder
-    builder_spec = (ZarrSpecBuilder()
-                   .kvstore("memory")
-                   .path("built_array.zarr")
-                   .chunks([32, 32])
-                   .compression({"id": "gzip"})
-                   .build())
+    builder_spec = (
+        ZarrSpecBuilder()
+        .kvstore("memory")
+        .path("built_array.zarr")
+        .chunks([32, 32])
+        .compression({"id": "gzip"})
+        .build()
+    )
     print(f"Builder Zarr: {builder_spec.path}")
 
 
@@ -92,8 +90,8 @@ def example_n5_spec():
             "dimensions": [1000, 1000, 100],
             "blockSize": [64, 64, 64],
             "dataType": "uint16",
-            "compression": {"type": "gzip"}
-        }
+            "compression": {"type": "gzip"},
+        },
     )
     print(f"N5 spec path: {n5_spec.get_effective_path()}")
 
@@ -103,14 +101,16 @@ def example_generic_builder():
     print("\n=== Generic Builder Examples ===")
 
     # Build a Zarr spec using generic builder
-    spec = (SpecBuilder()
-           .driver("zarr")
-           .kvstore("memory")
-           .dtype("float32")
-           .shape([100, 200])
-           .chunk_shape([50, 50])
-           .compression({"id": "blosc"})
-           .build())
+    spec = (
+        SpecBuilder()
+        .driver("zarr")
+        .kvstore("memory")
+        .dtype("float32")
+        .shape([100, 200])
+        .chunk_shape([50, 50])
+        .compression({"id": "blosc"})
+        .build()
+    )
 
     print(f"Generic builder spec: {spec.driver}")
 
@@ -120,11 +120,7 @@ def example_validation_and_parsing():
     print("\n=== Validation Examples ===")
 
     # Parse from dictionary
-    spec_dict = {
-        "driver": "array",
-        "array": [[1, 2], [3, 4]],
-        "dtype": "int32"
-    }
+    spec_dict = {"driver": "array", "array": [[1, 2], [3, 4]], "dtype": "int32"}
 
     spec = TensorStoreSpec.model_validate(spec_dict)
     print(f"Parsed spec driver: {spec.driver}")
@@ -148,11 +144,7 @@ def example_introspection():
     print(f"Available drivers: {drivers}")
 
     # Get spec information
-    spec = ArraySpec(
-        driver="array",
-        array=[[1, 2, 3], [4, 5, 6]],
-        dtype="float32"
-    )
+    spec = ArraySpec(driver="array", array=[[1, 2, 3], [4, 5, 6]], dtype="float32")
 
     info = get_spec_info(spec)
     print("Spec info:")

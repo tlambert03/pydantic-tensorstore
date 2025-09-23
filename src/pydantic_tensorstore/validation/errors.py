@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 
 class TensorStoreValidationError(ValueError):
@@ -14,9 +14,9 @@ class TensorStoreValidationError(ValueError):
     def __init__(
         self,
         message: str,
-        field_path: Optional[str] = None,
-        spec_data: Optional[dict[str, Any]] = None,
-        driver: Optional[str] = None,
+        field_path: str | None = None,
+        spec_data: dict[str, Any] | None = None,
+        driver: str | None = None,
     ) -> None:
         """Initialize validation error.
 
@@ -58,8 +58,8 @@ class DriverValidationError(TensorStoreValidationError):
         self,
         message: str,
         driver: str,
-        field_path: Optional[str] = None,
-        spec_data: Optional[dict[str, Any]] = None,
+        field_path: str | None = None,
+        spec_data: dict[str, Any] | None = None,
     ) -> None:
         """Initialize driver validation error."""
         super().__init__(
@@ -76,8 +76,8 @@ class SchemaValidationError(TensorStoreValidationError):
     def __init__(
         self,
         message: str,
-        field_path: Optional[str] = None,
-        schema_data: Optional[dict[str, Any]] = None,
+        field_path: str | None = None,
+        schema_data: dict[str, Any] | None = None,
     ) -> None:
         """Initialize schema validation error."""
         super().__init__(
@@ -93,9 +93,9 @@ class KvStoreValidationError(TensorStoreValidationError):
     def __init__(
         self,
         message: str,
-        kvstore_driver: Optional[str] = None,
-        field_path: Optional[str] = None,
-        kvstore_data: Optional[dict[str, Any]] = None,
+        kvstore_driver: str | None = None,
+        field_path: str | None = None,
+        kvstore_data: dict[str, Any] | None = None,
     ) -> None:
         """Initialize kvstore validation error."""
         super().__init__(
@@ -112,8 +112,8 @@ class TransformValidationError(TensorStoreValidationError):
     def __init__(
         self,
         message: str,
-        field_path: Optional[str] = None,
-        transform_data: Optional[dict[str, Any]] = None,
+        field_path: str | None = None,
+        transform_data: dict[str, Any] | None = None,
     ) -> None:
         """Initialize transform validation error."""
         super().__init__(
@@ -129,9 +129,9 @@ class ContextValidationError(TensorStoreValidationError):
     def __init__(
         self,
         message: str,
-        resource_name: Optional[str] = None,
-        field_path: Optional[str] = None,
-        context_data: Optional[dict[str, Any]] = None,
+        resource_name: str | None = None,
+        field_path: str | None = None,
+        context_data: dict[str, Any] | None = None,
     ) -> None:
         """Initialize context validation error."""
         enhanced_message = message

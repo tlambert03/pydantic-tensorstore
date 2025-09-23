@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
-from pydantic_tensorstore.core.spec import TensorStoreSpec, SpecValidator
+from pydantic_tensorstore.core.spec import SpecValidator, TensorStoreSpec
 from pydantic_tensorstore.types.common import DataType
 
 
@@ -131,70 +131,104 @@ def get_driver_capabilities(driver: str) -> dict[str, Any]:
     }
 
     if driver == "array":
-        capabilities.update({
-            "supported_dtypes": [dt.value for dt in DataType],
-            "supports_kvstore": False,
-            "supports_compression": False,
-            "supports_chunks": False,
-            "description": "In-memory array driver for testing and small datasets",
-        })
+        capabilities.update(
+            {
+                "supported_dtypes": [dt.value for dt in DataType],
+                "supports_kvstore": False,
+                "supports_compression": False,
+                "supports_chunks": False,
+                "description": "In-memory array driver for testing and small datasets",
+            }
+        )
 
     elif driver == "zarr":
-        capabilities.update({
-            "supported_dtypes": [
-                "bool", "int8", "int16", "int32", "int64",
-                "uint8", "uint16", "uint32", "uint64",
-                "float16", "float32", "float64",
-                "complex64", "complex128"
-            ],
-            "supports_kvstore": True,
-            "supports_compression": True,
-            "supports_chunks": True,
-            "metadata_format": "zarr_v2",
-            "description": "Zarr v2 format driver for chunked, compressed arrays",
-        })
+        capabilities.update(
+            {
+                "supported_dtypes": [
+                    "bool",
+                    "int8",
+                    "int16",
+                    "int32",
+                    "int64",
+                    "uint8",
+                    "uint16",
+                    "uint32",
+                    "uint64",
+                    "float16",
+                    "float32",
+                    "float64",
+                    "complex64",
+                    "complex128",
+                ],
+                "supports_kvstore": True,
+                "supports_compression": True,
+                "supports_chunks": True,
+                "metadata_format": "zarr_v2",
+                "description": "Zarr v2 format driver for chunked, compressed arrays",
+            }
+        )
 
     elif driver == "zarr3":
-        capabilities.update({
-            "supported_dtypes": [
-                "bool", "int8", "int16", "int32", "int64",
-                "uint8", "uint16", "uint32", "uint64",
-                "float16", "float32", "float64",
-                "complex64", "complex128"
-            ],
-            "supports_kvstore": True,
-            "supports_compression": True,
-            "supports_chunks": True,
-            "metadata_format": "zarr_v3",
-            "description": "Zarr v3 format driver with enhanced features",
-        })
+        capabilities.update(
+            {
+                "supported_dtypes": [
+                    "bool",
+                    "int8",
+                    "int16",
+                    "int32",
+                    "int64",
+                    "uint8",
+                    "uint16",
+                    "uint32",
+                    "uint64",
+                    "float16",
+                    "float32",
+                    "float64",
+                    "complex64",
+                    "complex128",
+                ],
+                "supports_kvstore": True,
+                "supports_compression": True,
+                "supports_chunks": True,
+                "metadata_format": "zarr_v3",
+                "description": "Zarr v3 format driver with enhanced features",
+            }
+        )
 
     elif driver == "n5":
-        capabilities.update({
-            "supported_dtypes": [
-                "uint8", "uint16", "uint32", "uint64",
-                "int8", "int16", "int32", "int64",
-                "float32", "float64"
-            ],
-            "supports_kvstore": True,
-            "supports_compression": True,
-            "supports_chunks": True,
-            "metadata_format": "n5",
-            "description": "N5 format driver for scientific computing",
-        })
+        capabilities.update(
+            {
+                "supported_dtypes": [
+                    "uint8",
+                    "uint16",
+                    "uint32",
+                    "uint64",
+                    "int8",
+                    "int16",
+                    "int32",
+                    "int64",
+                    "float32",
+                    "float64",
+                ],
+                "supports_kvstore": True,
+                "supports_compression": True,
+                "supports_chunks": True,
+                "metadata_format": "n5",
+                "description": "N5 format driver for scientific computing",
+            }
+        )
 
     elif driver == "neuroglancer_precomputed":
-        capabilities.update({
-            "supported_dtypes": [
-                "uint8", "uint16", "uint32", "uint64",
-                "float32"
-            ],
-            "supports_kvstore": True,
-            "supports_compression": True,
-            "supports_chunks": True,
-            "metadata_format": "neuroglancer",
-            "description": "Neuroglancer Precomputed format for visualization",
-        })
+        capabilities.update(
+            {
+                "supported_dtypes": ["uint8", "uint16", "uint32", "uint64", "float32"],
+                "supports_kvstore": True,
+                "supports_compression": True,
+                "supports_chunks": True,
+                "metadata_format": "neuroglancer",
+                "description": "Neuroglancer Precomputed format for visualization",
+            }
+        )
 
     return capabilities
 
@@ -226,9 +260,7 @@ def validate_driver_exists(driver: str) -> bool:
     return SpecValidator.is_driver_registered(driver)
 
 
-def get_compatible_drivers(
-    requirements: dict[str, Any]
-) -> list[str]:
+def get_compatible_drivers(requirements: dict[str, Any]) -> list[str]:
     """Get drivers compatible with given requirements.
 
     Parameters

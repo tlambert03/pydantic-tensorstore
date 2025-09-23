@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Union
+from typing import Any
 
 from pydantic_tensorstore.core.spec import TensorStoreSpec
 from pydantic_tensorstore.validation.validators import validate_spec
@@ -68,7 +68,7 @@ def spec_to_json(
     spec: TensorStoreSpec,
     exclude_unset: bool = True,
     exclude_none: bool = True,
-    indent: Union[int, str, None] = None,
+    indent: int | str | None = None,
 ) -> str:
     """Convert a TensorStore spec to JSON string.
 
@@ -120,7 +120,7 @@ def spec_from_json(
 
 
 def normalize_spec(
-    spec: Union[dict[str, Any], TensorStoreSpec],
+    spec: dict[str, Any] | TensorStoreSpec,
     exclude_defaults: bool = True,
 ) -> dict[str, Any]:
     """Normalize a spec to a consistent dictionary format.
@@ -149,8 +149,8 @@ def normalize_spec(
 
 
 def merge_specs(
-    base_spec: Union[dict[str, Any], TensorStoreSpec],
-    override_spec: Union[dict[str, Any], TensorStoreSpec],
+    base_spec: dict[str, Any] | TensorStoreSpec,
+    override_spec: dict[str, Any] | TensorStoreSpec,
 ) -> TensorStoreSpec:
     """Merge two specs, with override_spec taking precedence.
 
@@ -175,15 +175,17 @@ def merge_specs(
     # Handle nested dicts like schema, context, etc.
     for key in ["schema", "context", "metadata"]:
         if key in base_dict and key in override_dict:
-            if isinstance(base_dict[key], dict) and isinstance(override_dict[key], dict):
+            if isinstance(base_dict[key], dict) and isinstance(
+                override_dict[key], dict
+            ):
                 merged_dict[key] = {**base_dict[key], **override_dict[key]}
 
     return spec_from_dict(merged_dict)
 
 
 def compare_specs(
-    spec1: Union[dict[str, Any], TensorStoreSpec],
-    spec2: Union[dict[str, Any], TensorStoreSpec],
+    spec1: dict[str, Any] | TensorStoreSpec,
+    spec2: dict[str, Any] | TensorStoreSpec,
     ignore_fields: list[str] | None = None,
 ) -> bool:
     """Compare two specs for equality.

@@ -1,25 +1,25 @@
 """Common types and enums for TensorStore specifications."""
 
 from pydantic_tensorstore.types.common import (
+    ChunkShape,
+    ContextResource,
     DataType,
+    DimensionIndex,
+    DomainShape,
+    Index,
     OpenMode,
     ReadWriteMode,
-    ContextResource,
-    DimensionIndex,
-    Index,
     Shape,
-    ChunkShape,
-    DomainShape,
 )
 
 __all__ = [
+    "ChunkShape",
+    "ContextResource",
     "DataType",
+    "DimensionIndex",
+    "DomainShape",
+    "Index",
     "OpenMode",
     "ReadWriteMode",
-    "ContextResource",
-    "DimensionIndex",
-    "Index",
     "Shape",
-    "ChunkShape",
-    "DomainShape",
 ]

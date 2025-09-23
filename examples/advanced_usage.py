@@ -10,10 +10,17 @@ import json
 from typing import Any
 
 from pydantic_tensorstore import TensorStoreSpec
-from pydantic_tensorstore.validation.validators import validate_spec
-from pydantic_tensorstore.utils.conversion import merge_specs, compare_specs, normalize_spec
-from pydantic_tensorstore.utils.introspection import get_driver_capabilities, get_compatible_drivers
+from pydantic_tensorstore.utils.conversion import (
+    compare_specs,
+    merge_specs,
+    normalize_spec,
+)
+from pydantic_tensorstore.utils.introspection import (
+    get_compatible_drivers,
+    get_driver_capabilities,
+)
 from pydantic_tensorstore.validation.errors import TensorStoreValidationError
+from pydantic_tensorstore.validation.validators import validate_spec
 
 
 def example_custom_validation():
@@ -24,7 +31,7 @@ def example_custom_validation():
     valid_spec = {
         "driver": "zarr",
         "kvstore": {"driver": "memory"},
-        "metadata": {"chunks": [64, 64]}
+        "metadata": {"chunks": [64, 64]},
     }
 
     try:
@@ -34,10 +41,7 @@ def example_custom_validation():
         print(f"❌ Validation error: {e}")
 
     # Invalid spec (missing kvstore)
-    invalid_spec = {
-        "driver": "zarr",
-        "path": "test.zarr"
-    }
+    invalid_spec = {"driver": "zarr", "path": "test.zarr"}
 
     try:
         spec = validate_spec(invalid_spec, strict=True)
@@ -53,13 +57,13 @@ def example_spec_merging():
     base_spec = {
         "driver": "zarr",
         "kvstore": {"driver": "file", "path": "/data/"},
-        "metadata": {"chunks": [64, 64]}
+        "metadata": {"chunks": [64, 64]},
     }
 
     override_spec = {
         "driver": "zarr",
         "path": "my_array.zarr",
-        "metadata": {"compressor": {"id": "blosc"}}
+        "metadata": {"compressor": {"id": "blosc"}},
     }
 
     merged = merge_specs(base_spec, override_spec)
@@ -71,17 +75,13 @@ def example_spec_comparison():
     """Example: Comparing specifications."""
     print("\n=== Spec Comparison Examples ===")
 
-    spec1 = {
-        "driver": "array",
-        "array": [[1, 2], [3, 4]],
-        "dtype": "int32"
-    }
+    spec1 = {"driver": "array", "array": [[1, 2], [3, 4]], "dtype": "int32"}
 
     spec2 = {
         "driver": "array",
         "array": [[1, 2], [3, 4]],
         "dtype": "int32",
-        "context": {"cache_pool": {}}  # Extra field
+        "context": {"cache_pool": {}},  # Extra field
     }
 
     # Compare with all fields
@@ -113,18 +113,13 @@ def example_compatible_drivers():
     print("\n=== Compatible Drivers Examples ===")
 
     # Find drivers that support float32 and compression
-    requirements = {
-        "dtype": "float32",
-        "needs_compression": True
-    }
+    requirements = {"dtype": "float32", "needs_compression": True}
 
     compatible = get_compatible_drivers(requirements)
     print(f"Drivers supporting float32 + compression: {compatible}")
 
     # Find drivers that need kvstore
-    requirements = {
-        "needs_kvstore": True
-    }
+    requirements = {"needs_kvstore": True}
 
     compatible = get_compatible_drivers(requirements)
     print(f"Drivers using kvstore: {compatible}")
@@ -140,7 +135,7 @@ def example_spec_normalization():
         "array": [[1, 2], [3, 4]],
         "dtype": "int32",
         "context": None,  # Default value
-        "extra_field": "should_be_removed"  # Invalid field
+        "extra_field": "should_be_removed",  # Invalid field
     }
 
     try:
@@ -156,28 +151,22 @@ def example_conditional_spec_building():
     print("\n=== Conditional Spec Building ===")
 
     def build_storage_spec(
-        storage_type: str,
-        path: str,
-        use_compression: bool = True
+        storage_type: str, path: str, use_compression: bool = True
     ) -> dict[str, Any]:
         """Build a storage spec based on requirements."""
         if storage_type == "memory":
-            spec = {
-                "driver": "zarr",
-                "kvstore": {"driver": "memory"},
-                "path": path
-            }
+            spec = {"driver": "zarr", "kvstore": {"driver": "memory"}, "path": path}
         elif storage_type == "file":
             spec = {
                 "driver": "zarr",
                 "kvstore": {"driver": "file", "path": "/data/"},
-                "path": path
+                "path": path,
             }
         elif storage_type == "n5":
             spec = {
                 "driver": "n5",
                 "kvstore": {"driver": "file", "path": "/data/n5/"},
-                "path": path
+                "path": path,
             }
         else:
             raise ValueError(f"Unknown storage type: {storage_type}")
@@ -216,7 +205,7 @@ def example_error_handling():
 
     for i, spec_dict in enumerate(invalid_specs, 1):
         try:
-            spec = validate_spec(spec_dict)
+            validate_spec(spec_dict)
             print(f"Spec {i}: ✅ Valid")
         except TensorStoreValidationError as e:
             print(f"Spec {i}: ❌ {e}")

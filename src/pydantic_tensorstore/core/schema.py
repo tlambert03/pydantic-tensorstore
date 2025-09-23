@@ -6,13 +6,15 @@ chunk layout, codec, fill value, and dimension units.
 
 from __future__ import annotations
 
-from typing import Any, List, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from pydantic_tensorstore.core.chunk_layout import ChunkLayout
-from pydantic_tensorstore.core.transform import IndexDomain
 from pydantic_tensorstore.types.common import DataType, DimensionIndex, Unit
+
+if TYPE_CHECKING:
+    from pydantic_tensorstore.core.chunk_layout import ChunkLayout
+    from pydantic_tensorstore.core.transform import IndexDomain
 
 
 class Schema(BaseModel):
@@ -21,7 +23,8 @@ class Schema(BaseModel):
     Defines the structure and constraints for TensorStore data including
     data type, domain, chunking, encoding, and physical units.
 
-    Attributes:
+    Attributes
+    ----------
         dtype: Data type of array elements
         domain: Index domain (shape and labels)
         chunk_layout: Chunking configuration
@@ -35,45 +38,43 @@ class Schema(BaseModel):
         ...     dtype="float32",
         ...     domain={"shape": [100, 200]},
         ...     chunk_layout={"grid_origin": [0, 0]},
-        ...     fill_value=0.0
+        ...     fill_value=0.0,
         ... )
     """
 
     model_config = {"extra": "forbid", "validate_assignment": True}
 
-    dtype: Optional[DataType] = Field(
+    dtype: DataType | None = Field(
         default=None, description="Data type of array elements"
     )
 
-    domain: Optional[IndexDomain] = Field(
+    domain: IndexDomain | None = Field(
         default=None, description="Index domain (shape, bounds, labels)"
     )
 
-    chunk_layout: Optional[ChunkLayout] = Field(
+    chunk_layout: ChunkLayout | None = Field(
         default=None, description="Chunk layout constraints"
     )
 
-    codec: Optional[Any] = Field(
+    codec: Any | None = Field(
         default=None, description="Codec specification for compression/encoding"
     )
 
-    fill_value: Optional[Union[int, float, bool, str, List[Any]]] = Field(
+    fill_value: int | float | bool | str | list[Any] | None = Field(
         default=None, description="Fill value for unwritten elements"
     )
 
-    dimension_units: Optional[List[Optional[Union[str, Unit]]]] = Field(
+    dimension_units: list[str | Unit | None] | None = Field(
         default=None, description="Physical units for each dimension"
     )
 
-    rank: Optional[DimensionIndex] = Field(
+    rank: DimensionIndex | None = Field(
         default=None, description="Number of dimensions"
     )
 
     @field_validator("dimension_units", mode="before")
     @classmethod
-    def validate_dimension_units(
-        cls, v: Any
-    ) -> Optional[List[Optional[Union[str, Unit]]]]:
+    def validate_dimension_units(cls, v: Any) -> list[str | Unit | None] | None:
         """Convert string units to Unit objects."""
         if v is None:
             return None
@@ -137,7 +138,7 @@ class Schema(BaseModel):
                     f"doesn't match rank {self.rank}"
                 )
 
-    def get_effective_rank(self) -> Optional[DimensionIndex]:
+    def get_effective_rank(self) -> DimensionIndex | None:
         """Get the effective rank, computed from various sources."""
         if self.rank is not None:
             return self.rank

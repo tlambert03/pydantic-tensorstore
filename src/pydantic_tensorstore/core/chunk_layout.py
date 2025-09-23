@@ -5,11 +5,12 @@ Defines how data is partitioned into chunks for storage and I/O optimization.
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from pydantic_tensorstore.types.common import ChunkShape, Shape
+if TYPE_CHECKING:
+    from pydantic_tensorstore.types.common import ChunkShape, Shape
 
 
 class ChunkLayout(BaseModel):
@@ -18,7 +19,8 @@ class ChunkLayout(BaseModel):
     Controls how array data is partitioned into chunks for storage,
     compression, and parallel I/O.
 
-    Attributes:
+    Attributes
+    ----------
         grid_origin: Origin point for chunk grid alignment
         inner_order: Dimension order for memory layout within chunks
         read_chunk_shape: Shape for read operations
@@ -30,59 +32,57 @@ class ChunkLayout(BaseModel):
 
     Example:
         >>> layout = ChunkLayout(
-        ...     chunk_shape=[64, 64, 64],
-        ...     inner_order=[0, 1, 2],
-        ...     grid_origin=[0, 0, 0]
+        ...     chunk_shape=[64, 64, 64], inner_order=[0, 1, 2], grid_origin=[0, 0, 0]
         ... )
     """
 
     model_config = {"extra": "forbid", "validate_assignment": True}
 
-    grid_origin: Optional[Shape] = Field(
+    grid_origin: Shape | None = Field(
         default=None,
         description="Grid origin for chunk alignment",
     )
 
-    inner_order: Optional[list[int]] = Field(
+    inner_order: list[int] | None = Field(
         default=None,
         description="Dimension order for memory layout (C=row-major, F=col-major)",
     )
 
-    read_chunk_shape: Optional[ChunkShape] = Field(
+    read_chunk_shape: ChunkShape | None = Field(
         default=None,
         description="Chunk shape for read operations",
     )
 
-    write_chunk_shape: Optional[ChunkShape] = Field(
+    write_chunk_shape: ChunkShape | None = Field(
         default=None,
         description="Chunk shape for write operations",
     )
 
-    chunk_shape: Optional[ChunkShape] = Field(
+    chunk_shape: ChunkShape | None = Field(
         default=None,
         description="Chunk shape for both read and write operations",
     )
 
-    chunk_elements: Optional[int] = Field(
+    chunk_elements: int | None = Field(
         default=None,
         description="Target number of elements per chunk",
         gt=0,
     )
 
-    chunk_bytes: Optional[int] = Field(
+    chunk_bytes: int | None = Field(
         default=None,
         description="Target size in bytes per chunk",
         gt=0,
     )
 
-    chunk_aspect_ratio: Optional[list[Optional[float]]] = Field(
+    chunk_aspect_ratio: list[float | None] | None = Field(
         default=None,
         description="Preferred aspect ratio for automatic chunk sizing",
     )
 
     @field_validator("inner_order", mode="before")
     @classmethod
-    def validate_inner_order(cls, v: Any) -> Optional[list[int]]:
+    def validate_inner_order(cls, v: Any) -> list[int] | None:
         """Validate inner order is a valid permutation."""
         if v is None:
             return None
@@ -97,14 +97,16 @@ class ChunkLayout(BaseModel):
         sorted_order = sorted(v)
         if sorted_order != list(range(len(v))):
             raise ValueError(
-                f"inner_order must be a permutation of [0, 1, ..., {len(v)-1}]"
+                f"inner_order must be a permutation of [0, 1, ..., {len(v) - 1}]"
             )
 
         return v
 
-    @field_validator("chunk_shape", "read_chunk_shape", "write_chunk_shape", mode="before")
+    @field_validator(
+        "chunk_shape", "read_chunk_shape", "write_chunk_shape", mode="before"
+    )
     @classmethod
-    def validate_chunk_shape(cls, v: Any) -> Optional[ChunkShape]:
+    def validate_chunk_shape(cls, v: Any) -> ChunkShape | None:
         """Validate chunk shape values."""
         if v is None:
             return None
@@ -120,7 +122,7 @@ class ChunkLayout(BaseModel):
 
     @field_validator("chunk_aspect_ratio", mode="before")
     @classmethod
-    def validate_chunk_aspect_ratio(cls, v: Any) -> Optional[list[Optional[float]]]:
+    def validate_chunk_aspect_ratio(cls, v: Any) -> list[float | None] | None:
         """Validate chunk aspect ratio values."""
         if v is None:
             return None
@@ -155,7 +157,10 @@ class ChunkLayout(BaseModel):
                     f"read_chunk_shape rank {len(self.read_chunk_shape)}"
                 )
 
-            if self.write_chunk_shape is not None and len(self.write_chunk_shape) != rank:
+            if (
+                self.write_chunk_shape is not None
+                and len(self.write_chunk_shape) != rank
+            ):
                 raise ValueError(
                     f"inner_order rank {rank} doesn't match "
                     f"write_chunk_shape rank {len(self.write_chunk_shape)}"
@@ -167,7 +172,7 @@ class ChunkLayout(BaseModel):
                     f"grid_origin rank {len(self.grid_origin)}"
                 )
 
-    def get_effective_rank(self) -> Optional[int]:
+    def get_effective_rank(self) -> int | None:
         """Get the effective rank from various sources."""
         if self.inner_order is not None:
             return len(self.inner_order)
@@ -181,13 +186,13 @@ class ChunkLayout(BaseModel):
             return len(self.chunk_aspect_ratio)
         return None
 
-    def is_c_order(self) -> Optional[bool]:
+    def is_c_order(self) -> bool | None:
         """Check if this represents C (row-major) order."""
         if self.inner_order is None:
             return None
         return self.inner_order == list(range(len(self.inner_order)))
 
-    def is_f_order(self) -> Optional[bool]:
+    def is_f_order(self) -> bool | None:
         """Check if this represents Fortran (column-major) order."""
         if self.inner_order is None:
             return None
