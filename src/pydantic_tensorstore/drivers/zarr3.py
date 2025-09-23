@@ -4,8 +4,7 @@ from __future__ import annotations
 
 from typing import Annotated, Any, ClassVar, Literal, TypeAlias
 
-from annotated_types import Ge
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, BeforeValidator, Field, NonNegativeInt, PositiveInt
 
 from pydantic_tensorstore._types import DataType
 from pydantic_tensorstore.core.spec import ChunkedTensorStoreKvStoreAdapterSpec
@@ -31,7 +30,7 @@ Zarr3DataType: TypeAlias = Literal[
 
 
 class _ZarrChunkConfiguration(BaseModel):
-    chunk_shape: list[Annotated[int, Ge(1)]] | None = Field(
+    chunk_shape: list[PositiveInt] | None = Field(
         default=None,
         description="""Chunk dimensions.
 
@@ -53,6 +52,40 @@ class _ZarrChunkGrid(BaseModel):
     configuration: _ZarrChunkConfiguration
 
 
+def _str_to_codec(v: str) -> dict[str, Any]:
+    if isinstance(v, str):
+        return {"name": v}
+    return v
+
+
+#  TODO
+SingleCodec: TypeAlias = Annotated[Any, BeforeValidator(_str_to_codec)]
+CodecChain: TypeAlias = list[SingleCodec]
+
+
+class _DefaultChunkKeyEncoding(BaseModel):
+    """Default chunk key encoding."""
+
+    name: Literal["default"] = "default"
+    configuration: dict[str, Any] = Field(
+        default_factory=lambda: {"separator": "/"},
+        description="Default chunk key encoding configuration",
+    )
+
+
+class _V2ChunkKeyEncoding(BaseModel):
+    """Default chunk key encoding."""
+
+    name: Literal["v2"] = "v2"
+    configuration: dict[str, Any] = Field(
+        default_factory=lambda: {"separator": "."},
+        description="Default chunk key encoding configuration",
+    )
+
+
+Zarr3ChunkKeyEncoding = _DefaultChunkKeyEncoding | _V2ChunkKeyEncoding
+
+
 class Zarr3Metadata(ChunkedTensorStoreKvStoreAdapterSpec):
     """Zarr v3 metadata specification.
 
@@ -62,24 +95,19 @@ class Zarr3Metadata(ChunkedTensorStoreKvStoreAdapterSpec):
 
     model_config: ClassVar = {"extra": "allow"}
 
-    zarr_format: Literal[3] = Field(
-        default=3,
-        description="Zarr format version",
-    )
+    zarr_format: Literal[3] = 3
+    node_type: Literal["array"] = "array"
 
-    node_type: Literal["array"] = Field(
-        default="array",
-        description="Node type (array for data arrays)",
-    )
-
-    shape: list[Annotated[int, Ge(0)]] = Field(
+    shape: list[NonNegativeInt] | None = Field(
+        default=None,
         description=(
             "Array shape. Required when creating a new array "
             "if the `Schema.domain` is not otherwise specified."
         ),
     )
 
-    data_type: Zarr3DataType = Field(
+    data_type: Zarr3DataType | None = Field(
+        default=None,
         description="Data type specification",
     )
 
@@ -88,29 +116,29 @@ class Zarr3Metadata(ChunkedTensorStoreKvStoreAdapterSpec):
         description="Chunk grid specification",
     )
 
-    chunk_key_encoding: dict[str, Any] = Field(
-        default_factory=lambda: {"name": "default", "separator": "/"},
+    chunk_key_encoding: Zarr3ChunkKeyEncoding | None = Field(
+        default=None,
         description="Chunk key encoding configuration",
     )
 
-    fill_value: int | float | str | bool | list[Any] | None = Field(
+    fill_value: Any = Field(
         default=None,
         description="Fill value for uninitialized chunks",
     )
 
-    codecs: list[dict[str, Any]] | None = Field(
+    codecs: CodecChain | None = Field(
         default=None,
         description="Codec pipeline for compression and encoding",
-    )
-
-    dimension_names: list[str | None] | None = Field(
-        default=None,
-        description="Names for each dimension",
     )
 
     attributes: dict[str, Any] = Field(
         default_factory=dict,
         description="User-defined attributes",
+    )
+
+    dimension_names: list[str | None] | None = Field(
+        default=None,
+        description="Names for each dimension",
     )
 
 

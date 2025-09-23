@@ -73,6 +73,9 @@ class DataType(str, Enum):
     # JSON
     JSON = "json"
 
+    def __str__(self) -> str:
+        return self.value
+
 
 class OpenMode(str, Enum):
     """TensorStore open modes.
