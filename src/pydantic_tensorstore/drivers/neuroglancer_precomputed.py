@@ -2,15 +2,13 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, ClassVar, Literal
+from typing import Any, ClassVar, Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field
 
 from pydantic_tensorstore.core.spec import BaseDriverSpec
-
-if TYPE_CHECKING:
-    from pydantic_tensorstore.kvstore.base import KvStoreSpec
-    from pydantic_tensorstore.types.common import JsonObject
+from pydantic_tensorstore.kvstore import KvStoreSpec  # noqa: TC001
+from pydantic_tensorstore.types.common import JsonObject  # noqa: TC001
 
 
 class NeuroglancerPrecomputedSpec(BaseDriverSpec):
@@ -68,20 +66,6 @@ class NeuroglancerPrecomputedSpec(BaseDriverSpec):
         description="Scale-specific metadata",
     )
 
-    @field_validator("kvstore", mode="before")
-    @classmethod
-    def validate_kvstore(cls, v: Any) -> KvStoreSpec | JsonObject:
-        """Validate kvstore specification."""
-        if isinstance(v, dict):
-            if "driver" not in v:
-                raise ValueError("kvstore must specify a driver")
-            return v
-        return v
-
-    def get_driver_kind(self) -> str:
-        """Get the driver kind."""
-        return "tensorstore"
-
     def get_effective_path(self) -> str:
         """Get the effective storage path."""
         if isinstance(self.kvstore, dict):
@@ -91,6 +75,7 @@ class NeuroglancerPrecomputedSpec(BaseDriverSpec):
 
         if not kvstore_path:
             return self.path
+        kvstore_path = str(kvstore_path)
         if not self.path:
             return kvstore_path
 

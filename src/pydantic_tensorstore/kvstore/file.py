@@ -31,15 +31,13 @@ class FileKvStoreSpec(BaseKvStoreSpec):
         description="File system key-value store driver",
     )
 
-    path: str = Field(
-        description="Base path for file storage",
-    )
+    path: str = Field(description="Base path for file storage")
 
     @field_validator("path", mode="before")
     @classmethod
     def validate_path(cls, v: Any) -> str:
         """Validate and normalize the file path."""
-        if not isinstance(v, (str, Path)):
+        if not isinstance(v, str | Path):
             raise ValueError("Path must be a string or Path object")
 
         path_str = str(v)
@@ -52,7 +50,3 @@ class FileKvStoreSpec(BaseKvStoreSpec):
             return normalized_path
         except Exception as e:
             raise ValueError(f"Invalid path '{path_str}': {e}") from e
-
-    def get_driver_kind(self) -> str:
-        """Get the driver kind."""
-        return "kvstore"

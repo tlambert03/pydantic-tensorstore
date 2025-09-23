@@ -2,15 +2,13 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, ClassVar, Literal
+from typing import Any, ClassVar, Literal
 
 from pydantic import Field, field_validator
 
 from pydantic_tensorstore.core.spec import BaseDriverSpec
+from pydantic_tensorstore.kvstore import KvStoreSpec  # noqa: TC001
 from pydantic_tensorstore.types.common import DataType, JsonObject
-
-if TYPE_CHECKING:
-    from pydantic_tensorstore.kvstore.base import KvStoreSpec
 
 
 class Zarr3Metadata(BaseDriverSpec):
@@ -92,12 +90,11 @@ class Zarr3Metadata(BaseDriverSpec):
                 return DataType(v)
             except ValueError:
                 # Allow pass-through for Zarr3-specific data types
-                return v
-        return v
-
-    def get_driver_kind(self) -> str:
-        """Get the driver kind."""
-        return "metadata"
+                return str(v)
+        if isinstance(v, DataType):
+            return v
+        # Convert anything else to string
+        return str(v)
 
 
 class Zarr3Spec(BaseDriverSpec):
@@ -149,26 +146,12 @@ class Zarr3Spec(BaseDriverSpec):
         description="Zarr v3 metadata specification",
     )
 
-    @field_validator("kvstore", mode="before")
-    @classmethod
-    def validate_kvstore(cls, v: Any) -> KvStoreSpec | JsonObject:
-        """Validate kvstore specification."""
-        if isinstance(v, dict):
-            if "driver" not in v:
-                raise ValueError("kvstore must specify a driver")
-            return v
-        return v
-
-    def get_driver_kind(self) -> str:
-        """Get the driver kind."""
-        return "tensorstore"
-
     def get_effective_path(self) -> str:
         """Get the effective storage path."""
         if isinstance(self.kvstore, dict):
-            kvstore_path = self.kvstore.get("path", "")
+            kvstore_path = str(self.kvstore.get("path", ""))
         else:
-            kvstore_path = getattr(self.kvstore, "path", "")
+            kvstore_path = str(getattr(self.kvstore, "path", ""))
 
         if not kvstore_path:
             return self.path

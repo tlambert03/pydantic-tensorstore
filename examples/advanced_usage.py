@@ -9,7 +9,9 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from pydantic_tensorstore import TensorStoreSpec
+from pydantic import ValidationError
+
+from pydantic_tensorstore.core._union import TensorStoreSpec
 from pydantic_tensorstore.utils.conversion import (
     compare_specs,
     merge_specs,
@@ -19,11 +21,10 @@ from pydantic_tensorstore.utils.introspection import (
     get_compatible_drivers,
     get_driver_capabilities,
 )
-from pydantic_tensorstore.validation.errors import TensorStoreValidationError
 from pydantic_tensorstore.validation.validators import validate_spec
 
 
-def example_custom_validation():
+def example_custom_validation() -> None:
     """Example: Custom validation logic."""
     print("=== Custom Validation Examples ===")
 
@@ -37,7 +38,7 @@ def example_custom_validation():
     try:
         spec = validate_spec(valid_spec, strict=True)
         print(f"✅ Valid spec: {spec.driver}")
-    except TensorStoreValidationError as e:
+    except ValidationError as e:
         print(f"❌ Validation error: {e}")
 
     # Invalid spec (missing kvstore)
@@ -46,11 +47,11 @@ def example_custom_validation():
     try:
         spec = validate_spec(invalid_spec, strict=True)
         print(f"✅ Parsed: {spec.driver}")
-    except TensorStoreValidationError as e:
+    except ValidationError as e:
         print(f"❌ Expected validation error: {e}")
 
 
-def example_spec_merging():
+def example_spec_merging() -> None:
     """Example: Merging specifications."""
     print("\n=== Spec Merging Examples ===")
 
@@ -71,7 +72,7 @@ def example_spec_merging():
     print(json.dumps(merged.model_dump(exclude_unset=True), indent=2))
 
 
-def example_spec_comparison():
+def example_spec_comparison() -> None:
     """Example: Comparing specifications."""
     print("\n=== Spec Comparison Examples ===")
 
@@ -93,7 +94,7 @@ def example_spec_comparison():
     print(f"Specs equal (ignoring context): {are_equal_ignoring_context}")
 
 
-def example_driver_capabilities():
+def example_driver_capabilities() -> None:
     """Example: Exploring driver capabilities."""
     print("\n=== Driver Capabilities Examples ===")
 
@@ -108,7 +109,7 @@ def example_driver_capabilities():
         print(f"  Description: {caps['description']}")
 
 
-def example_compatible_drivers():
+def example_compatible_drivers() -> None:
     """Example: Finding compatible drivers."""
     print("\n=== Compatible Drivers Examples ===")
 
@@ -125,7 +126,7 @@ def example_compatible_drivers():
     print(f"Drivers using kvstore: {compatible}")
 
 
-def example_spec_normalization():
+def example_spec_normalization() -> None:
     """Example: Normalizing specifications."""
     print("\n=== Spec Normalization Examples ===")
 
@@ -146,7 +147,7 @@ def example_spec_normalization():
         print(f"Normalization error: {e}")
 
 
-def example_conditional_spec_building():
+def example_conditional_spec_building() -> None:
     """Example: Building specs conditionally."""
     print("\n=== Conditional Spec Building ===")
 
@@ -192,7 +193,7 @@ def example_conditional_spec_building():
         print(f"{storage_type}: {spec.driver} driver")
 
 
-def example_error_handling():
+def example_error_handling() -> None:
     """Example: Proper error handling."""
     print("\n=== Error Handling Examples ===")
 
@@ -207,13 +208,13 @@ def example_error_handling():
         try:
             validate_spec(spec_dict)
             print(f"Spec {i}: ✅ Valid")
-        except TensorStoreValidationError as e:
+        except ValidationError as e:
             print(f"Spec {i}: ❌ {e}")
         except Exception as e:
             print(f"Spec {i}: ❌ Unexpected error: {e}")
 
 
-def main():
+def main() -> None:
     """Run all advanced examples."""
     print("Advanced Pydantic TensorStore Examples")
     print("=" * 45)

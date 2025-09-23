@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from pydantic_tensorstore import TensorStoreSpec
+from pydantic_tensorstore.core._union import TensorStoreSpec
 from pydantic_tensorstore.drivers import ArraySpec, N5Spec, ZarrSpec
 from pydantic_tensorstore.utils.builders import (
     ArraySpecBuilder,
@@ -22,7 +22,7 @@ from pydantic_tensorstore.utils.introspection import (
 )
 
 
-def example_array_spec():
+def example_array_spec() -> None:
     """Example: Creating Array specifications."""
     print("=== Array Spec Examples ===")
 
@@ -41,7 +41,7 @@ def example_array_spec():
     print(f"Builder spec: {builder_spec.driver}")
 
 
-def example_zarr_spec():
+def example_zarr_spec() -> None:
     """Example: Creating Zarr specifications."""
     print("\n=== Zarr Spec Examples ===")
 
@@ -78,7 +78,7 @@ def example_zarr_spec():
     print(f"Builder Zarr: {builder_spec.path}")
 
 
-def example_n5_spec():
+def example_n5_spec() -> None:
     """Example: Creating N5 specifications."""
     print("\n=== N5 Spec Examples ===")
 
@@ -96,7 +96,7 @@ def example_n5_spec():
     print(f"N5 spec path: {n5_spec.get_effective_path()}")
 
 
-def example_generic_builder():
+def example_generic_builder() -> None:
     """Example: Using the generic SpecBuilder."""
     print("\n=== Generic Builder Examples ===")
 
@@ -115,7 +115,7 @@ def example_generic_builder():
     print(f"Generic builder spec: {spec.driver}")
 
 
-def example_validation_and_parsing():
+def example_validation_and_parsing() -> None:
     """Example: Validation and parsing from dictionaries."""
     print("\n=== Validation Examples ===")
 
@@ -135,7 +135,7 @@ def example_validation_and_parsing():
     print(f"Parsed from JSON: {parsed_spec.driver}")
 
 
-def example_introspection():
+def example_introspection() -> None:
     """Example: Introspecting specifications and drivers."""
     print("\n=== Introspection Examples ===")
 
@@ -152,7 +152,7 @@ def example_introspection():
         print(f"  {key}: {value}")
 
 
-def example_discriminated_union():
+def example_discriminated_union() -> None:
     """Example: Demonstrating discriminated union behavior."""
     print("\n=== Discriminated Union Examples ===")
 
@@ -168,7 +168,7 @@ def example_discriminated_union():
         print(f"Parsed as: {type(spec).__name__} with driver '{spec.driver}'")
 
 
-def main():
+def main() -> None:
     """Run all examples."""
     print("Pydantic TensorStore Examples")
     print("=" * 40)

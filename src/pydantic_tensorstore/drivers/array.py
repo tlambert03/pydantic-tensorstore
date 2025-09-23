@@ -57,7 +57,7 @@ class ArraySpec(BaseDriverSpec):
 
     @field_validator("array", mode="before")
     @classmethod
-    def validate_array_data(cls, v: Any) -> list[Any] | np.ndarray:
+    def validate_array_data(cls, v: Any) -> Any:
         """Validate array data structure."""
         if isinstance(v, np.ndarray):
             return v
@@ -115,7 +115,7 @@ class ArraySpec(BaseDriverSpec):
 
     @field_validator("dtype", mode="before")
     @classmethod
-    def validate_dtype_compatibility(cls, v: Any) -> DataType:
+    def validate_dtype_compatibility(cls, v: Any) -> Any:
         """Validate data type."""
         if isinstance(v, str):
             try:
@@ -126,10 +126,6 @@ class ArraySpec(BaseDriverSpec):
                     f"Invalid dtype '{v}'. Valid types: {valid_types}"
                 ) from None
         return v
-
-    def get_driver_kind(self) -> str:
-        """Get the driver kind."""
-        return "tensorstore"
 
     def get_array_shape(self) -> list[int]:
         """Get the shape of the array data."""

@@ -5,12 +5,11 @@ Defines how data is partitioned into chunks for storage and I/O optimization.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
-if TYPE_CHECKING:
-    from pydantic_tensorstore.types.common import ChunkShape, Shape
+from pydantic_tensorstore.types.common import ChunkShape, Shape  # noqa: TC001
 
 
 class ChunkLayout(BaseModel):

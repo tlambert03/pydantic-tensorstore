@@ -18,10 +18,10 @@ __version__ = "0.1.0"
 __author__ = "TensorStore Pydantic Team"
 __email__ = "noreply@example.com"
 
-from pydantic_tensorstore.core.context import Context
+from pydantic_tensorstore.core.context import Context  # noqa: I001
 from pydantic_tensorstore.core.schema import Schema
-from pydantic_tensorstore.core.spec import TensorStoreSpec
 from pydantic_tensorstore.core.transform import IndexTransform
+from pydantic_tensorstore.core._union import TensorStoreSpec
 
 # Driver specs
 from pydantic_tensorstore.drivers.array import ArraySpec
@@ -33,6 +33,8 @@ from pydantic_tensorstore.kvstore.file import FileKvStoreSpec
 # KvStore specs
 from pydantic_tensorstore.kvstore.memory import MemoryKvStoreSpec
 from pydantic_tensorstore.types.common import DataType, OpenMode
+
+from pydantic_tensorstore.validation import validate_spec
 
 __all__ = [
     # Drivers
@@ -51,4 +53,6 @@ __all__ = [
     "TensorStoreSpec",
     "Zarr3Spec",
     "ZarrSpec",
+    # Validation
+    "validate_spec",
 ]

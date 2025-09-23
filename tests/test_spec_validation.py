@@ -3,26 +3,25 @@
 from __future__ import annotations
 
 import pytest
+from pydantic import ValidationError
 
-from pydantic_tensorstore import TensorStoreSpec
-from pydantic_tensorstore.validation.errors import TensorStoreValidationError
-from pydantic_tensorstore.validation.validators import validate_spec, validate_spec_dict
+from pydantic_tensorstore import validate_spec
 
 
-def test_validate_basic_array_spec():
+def test_validate_basic_array_spec() -> None:
     """Test validation of basic array specification."""
     spec_dict = {"driver": "array", "array": [[1, 2, 3], [4, 5, 6]], "dtype": "int32"}
 
     # Should validate successfully
-    validated = validate_spec_dict(spec_dict)
-    assert validated["driver"] == "array"
+    validated = validate_spec(spec_dict)
+    assert validated.driver == "array"
 
     # Should parse successfully
     spec = validate_spec(spec_dict)
     assert spec.driver == "array"
 
 
-def test_validate_zarr_spec():
+def test_validate_zarr_spec() -> None:
     """Test validation of Zarr specification."""
     spec_dict = {
         "driver": "zarr",
@@ -30,33 +29,35 @@ def test_validate_zarr_spec():
         "metadata": {"chunks": [64, 64], "compressor": {"id": "blosc", "cname": "lz4"}},
     }
 
-    validated = validate_spec_dict(spec_dict)
-    assert validated["driver"] == "zarr"
-    assert "kvstore" in validated
+    validated = validate_spec(spec_dict)
+    assert validated.driver == "zarr"
+    assert validated.kvstore
 
     spec = validate_spec(spec_dict)
     assert spec.driver == "zarr"
 
 
-def test_validate_unknown_driver():
+def test_validate_unknown_driver() -> None:
     """Test validation with unknown driver."""
     spec_dict = {"driver": "unknown_driver", "some_field": "value"}
 
-    with pytest.raises(TensorStoreValidationError, match="Unknown driver"):
-        validate_spec_dict(spec_dict)
+    with pytest.raises(
+        ValidationError, match="does not match any of the expected tags"
+    ):
+        validate_spec(spec_dict)
 
 
-def test_validate_missing_driver():
+def test_validate_missing_driver() -> None:
     """Test validation with missing driver."""
     spec_dict = {"array": [[1, 2], [3, 4]], "dtype": "int32"}
 
     with pytest.raises(
-        TensorStoreValidationError, match="Missing required 'driver' field"
+        ValidationError, match="Unable to extract tag using discriminator"
     ):
-        validate_spec_dict(spec_dict)
+        validate_spec(spec_dict)
 
 
-def test_validate_array_missing_required_field():
+def test_validate_array_missing_required_field() -> None:
     """Test validation with missing required fields for array driver."""
     spec_dict = {
         "driver": "array",
@@ -64,13 +65,11 @@ def test_validate_array_missing_required_field():
         # Missing "array" field
     }
 
-    with pytest.raises(
-        TensorStoreValidationError, match="Array driver requires 'array' field"
-    ):
-        validate_spec_dict(spec_dict)
+    with pytest.raises(ValidationError, match="Field required"):
+        validate_spec(spec_dict)
 
 
-def test_validate_zarr_missing_kvstore():
+def test_validate_zarr_missing_kvstore() -> None:
     """Test validation with missing kvstore for Zarr driver."""
     spec_dict = {
         "driver": "zarr",
@@ -78,13 +77,11 @@ def test_validate_zarr_missing_kvstore():
         # Missing "kvstore" field
     }
 
-    with pytest.raises(
-        TensorStoreValidationError, match="Zarr driver requires 'kvstore' field"
-    ):
-        validate_spec_dict(spec_dict)
+    with pytest.raises(ValidationError, match="Field required"):
+        validate_spec(spec_dict)
 
 
-def test_validate_cross_field_consistency():
+def test_validate_cross_field_consistency() -> None:
     """Test cross-field validation."""
     # This would test more complex validation scenarios
     # For now, just test that basic validation passes
@@ -96,13 +93,13 @@ def test_validate_cross_field_consistency():
     }
 
     # Should validate successfully
-    validated = validate_spec_dict(spec_dict, strict=True)
-    assert validated["driver"] == "array"
+    validated = validate_spec(spec_dict, strict=True)
+    assert validated.driver == "array"
 
 
-def test_validate_already_parsed_spec():
+def test_validate_already_parsed_spec() -> None:
     """Test validation of already parsed specification."""
-    spec = TensorStoreSpec.model_validate(
+    spec = validate_spec(
         {"driver": "array", "array": [[1, 2], [3, 4]], "dtype": "int32"}
     )
 
@@ -112,20 +109,22 @@ def test_validate_already_parsed_spec():
     assert validated_spec is spec  # Should return the same object
 
 
-def test_validate_invalid_spec_type():
+def test_validate_invalid_spec_type() -> None:
     """Test validation with invalid input type."""
-    with pytest.raises(TensorStoreValidationError, match="Invalid spec type"):
+    with pytest.raises(
+        ValidationError, match="Input should be a valid dictionary or object"
+    ):
         validate_spec("not a dict or spec")
 
 
-def test_validation_modes():
+def test_validation_modes() -> None:
     """Test different validation modes."""
     spec_dict = {"driver": "array", "array": [[1, 2], [3, 4]], "dtype": "int32"}
 
     # Strict mode
-    validated_strict = validate_spec_dict(spec_dict, strict=True)
-    assert validated_strict["driver"] == "array"
+    validated_strict = validate_spec(spec_dict, strict=True)
+    assert validated_strict.driver == "array"
 
     # Non-strict mode
-    validated_non_strict = validate_spec_dict(spec_dict, strict=False)
-    assert validated_non_strict["driver"] == "array"
+    validated_non_strict = validate_spec(spec_dict, strict=False)
+    assert validated_non_strict.driver == "array"

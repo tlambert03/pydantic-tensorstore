@@ -6,15 +6,13 @@ chunk layout, codec, fill value, and dimension units.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
+from pydantic_tensorstore.core.chunk_layout import ChunkLayout  # noqa: TC001
+from pydantic_tensorstore.core.transform import IndexDomain  # noqa: TC001
 from pydantic_tensorstore.types.common import DataType, DimensionIndex, Unit
-
-if TYPE_CHECKING:
-    from pydantic_tensorstore.core.chunk_layout import ChunkLayout
-    from pydantic_tensorstore.core.transform import IndexDomain
 
 
 class Schema(BaseModel):
@@ -74,7 +72,7 @@ class Schema(BaseModel):
 
     @field_validator("dimension_units", mode="before")
     @classmethod
-    def validate_dimension_units(cls, v: Any) -> list[str | Unit | None] | None:
+    def validate_dimension_units(cls, v: Any) -> list[Unit | None] | None:
         """Convert string units to Unit objects."""
         if v is None:
             return None
@@ -82,7 +80,7 @@ class Schema(BaseModel):
         if not isinstance(v, list):
             raise ValueError("dimension_units must be a list")
 
-        result = []
+        result: list[Unit | None] = []
         for unit in v:
             if unit is None:
                 result.append(None)

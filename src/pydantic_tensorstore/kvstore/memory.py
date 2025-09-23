@@ -31,7 +31,3 @@ class MemoryKvStoreSpec(BaseKvStoreSpec):
         default="memory",
         description="Memory key-value store driver",
     )
-
-    def get_driver_kind(self) -> str:
-        """Get the driver kind."""
-        return "kvstore"

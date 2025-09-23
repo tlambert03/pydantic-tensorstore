@@ -2,15 +2,13 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, ClassVar, Literal
+from typing import Any, ClassVar, Literal
 
 from pydantic import Field, field_validator
 
 from pydantic_tensorstore.core.spec import BaseDriverSpec
-
-if TYPE_CHECKING:
-    from pydantic_tensorstore.kvstore.base import KvStoreSpec
-    from pydantic_tensorstore.types.common import JsonObject
+from pydantic_tensorstore.kvstore import KvStoreSpec  # noqa: TC001
+from pydantic_tensorstore.types.common import JsonObject  # noqa: TC001
 
 
 class ZarrMetadata(BaseDriverSpec):
@@ -75,10 +73,6 @@ class ZarrMetadata(BaseDriverSpec):
 
         return v
 
-    def get_driver_kind(self) -> str:
-        """Get the driver kind."""
-        return "metadata"
-
 
 class ZarrSpec(BaseDriverSpec):
     """Zarr driver specification for Zarr v2 format.
@@ -141,35 +135,20 @@ class ZarrSpec(BaseDriverSpec):
         description="Whether to recheck cached metadata",
     )
 
-    @field_validator("kvstore", mode="before")
-    @classmethod
-    def validate_kvstore(cls, v: Any) -> KvStoreSpec | JsonObject:
-        """Validate kvstore specification."""
-        if isinstance(v, dict):
-            if "driver" not in v:
-                raise ValueError("kvstore must specify a driver")
-            return v
-
-        return v
-
     @field_validator("path", mode="before")
     @classmethod
-    def validate_path(cls, v: Any) -> str:
+    def validate_path(cls, v: Any) -> Any:
         """Validate array path."""
         if not isinstance(v, str):
             raise ValueError("path must be a string")
         return v
 
-    def get_driver_kind(self) -> str:
-        """Get the driver kind."""
-        return "tensorstore"
-
     def get_effective_path(self) -> str:
         """Get the effective storage path combining kvstore and array path."""
         if isinstance(self.kvstore, dict):
-            kvstore_path = self.kvstore.get("path", "")
+            kvstore_path = str(self.kvstore.get("path", ""))
         else:
-            kvstore_path = getattr(self.kvstore, "path", "")
+            kvstore_path = str(getattr(self.kvstore, "path", ""))
 
         if not kvstore_path:
             return self.path

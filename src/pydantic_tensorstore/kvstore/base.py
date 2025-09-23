@@ -2,13 +2,10 @@
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Annotated, Any
+from abc import ABC
+from typing import ClassVar
 
-from pydantic import BaseModel, Discriminator, Field
-
-if TYPE_CHECKING:
-    from pydantic_tensorstore.types.common import DriverName
+from pydantic import BaseModel, Field
 
 
 class BaseKvStoreSpec(BaseModel, ABC):
@@ -28,66 +25,11 @@ class BaseKvStoreSpec(BaseModel, ABC):
         >>> kvstore = MemoryKvStoreSpec(driver="memory")
     """
 
-    model_config = {"extra": "forbid", "validate_assignment": True}
+    model_config: ClassVar = {"extra": "forbid", "validate_assignment": True}
 
-    driver: DriverName = Field(description="Key-value store driver identifier")
+    # driver: DriverName = Field(description="Key-value store driver identifier")
 
-    path: str = Field(
-        default="",
-        description="Path within the key-value store",
-    )
-
-    @abstractmethod
-    def get_driver_kind(self) -> str:
-        """Get the driver kind for this kvstore spec."""
-        ...
-
-
-def get_kvstore_discriminator(v: Any) -> str:
-    """Discriminator function for kvstore specs."""
-    if isinstance(v, dict):
-        driver = v.get("driver")
-        if isinstance(driver, str):
-            return driver
-        raise ValueError("Missing or invalid 'driver' field in kvstore")
-
-    if hasattr(v, "driver"):
-        return str(v.driver)
-
-    raise ValueError("Cannot determine kvstore driver from input")
-
-
-# Import kvstore specs for the discriminated union
-def _import_kvstore_specs() -> dict[str, type[BaseKvStoreSpec]]:
-    """Import all kvstore specs and return a mapping."""
-    try:
-        from pydantic_tensorstore.kvstore.file import FileKvStoreSpec
-        from pydantic_tensorstore.kvstore.memory import MemoryKvStoreSpec
-
-        return {
-            "memory": MemoryKvStoreSpec,
-            "file": FileKvStoreSpec,
-        }
-    except ImportError:
-        return {}
-
-
-# Create discriminated union for all kvstore specs
-_kvstore_specs = _import_kvstore_specs()
-
-if _kvstore_specs:
-    # Create annotated types for each kvstore
-    _kvstore_annotations = []
-    for driver_name, spec_class in _kvstore_specs.items():
-        from pydantic import Tag
-
-        _kvstore_annotations.append(Annotated[spec_class, Tag(driver_name)])
-
-    # Create the discriminated union type
-    KvStoreSpec = Annotated[
-        tuple(_kvstore_annotations),
-        Discriminator(get_kvstore_discriminator),
-    ]
-else:
-    # Fallback if no kvstore specs are available
-    KvStoreSpec = BaseKvStoreSpec
+    # path: str = Field(
+    #     default="",
+    #     description="Path within the key-value store",
+    # )

@@ -6,12 +6,15 @@ supporting operations like slicing, transposition, and broadcasting.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
-if TYPE_CHECKING:
-    from pydantic_tensorstore.types.common import DimensionIndex, Index, Shape
+from pydantic_tensorstore.types.common import (  # noqa: TC001
+    DimensionIndex,
+    Index,
+    Shape,
+)
 
 
 class DimensionSpec(BaseModel):
@@ -32,9 +35,18 @@ class DimensionSpec(BaseModel):
     @classmethod
     def validate_size(cls, v: Any) -> Index | None:
         """Validate dimension size."""
-        if v is not None and v <= 0:
+        if v is None:
+            return None
+        if not isinstance(v, int):
+            try:
+                v_int = int(v)
+            except (ValueError, TypeError):
+                raise ValueError("Dimension size must be an integer") from None
+        else:
+            v_int = v
+        if v_int <= 0:
             raise ValueError("Dimension size must be positive")
-        return v
+        return v_int
 
     def model_post_init(self, __context: Any) -> None:
         """Post-initialization validation."""
