@@ -1,19 +1,10 @@
-# https://peps.python.org/pep-0517/
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
-# https://hatch.pypa.io/latest/config/metadata/
 [tool.hatch.version]
 source = "vcs"
 
-# read more about configuring hatch at:
-# https://hatch.pypa.io/latest/config/build/
-[tool.hatch.build.targets.wheel]
-only-include = ["src"]
-sources = ["src"]
-
-# https://peps.python.org/pep-0621/
 [project]
 name = "pydantic-tensorstore"
 dynamic = ["version"]
@@ -25,8 +16,7 @@ authors = [{ name = "Talley Lambert", email = "talley.lambert@gmail.com" }]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "License :: OSI Approved :: BSD License",
-    "Programming Language :: Python :: 3",    
-    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -34,38 +24,25 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
     "Typing :: Typed",
 ]
-dependencies = []
-
-# https://peps.python.org/pep-0621/#dependencies-optional-dependencies
-# add dependencies for "extra" features here.  Not dev dependencies.
-# [project.optional-dependencies]
-# name = ["dependency"]
+dependencies = [
+    "pydantic>=2.11.9",
+]
 
 [project.urls]
 homepage = "https://github.com/tlambert03/pydantic-tensorstore"
 repository = "https://github.com/tlambert03/pydantic-tensorstore"
 
-# Entry points
-# https://peps.python.org/pep-0621/#entry-points
-# same as console_scripts entry point
-# [project.scripts]
-# pydantic-tensorstore-cli = "pydantic_tensorstore:main_cli"
-
-# [project.entry-points."some.group"]
-# tomatoes = "pydantic_tensorstore:main_tomatoes"
-
-# https://peps.python.org/pep-0735/
-# setup with `uv sync` or `pip install -e . --group dev`
 [dependency-groups]
 test = ["pytest", "pytest-cov"]
 dev = [
     { include-group = "test" },
     "ipython",
     "mypy",
-    "pdbpp",  # https://github.com/pdbpp/pdbpp
+    "pdbpp", # https://github.com/pdbpp/pdbpp
     "pre-commit-uv",
-    "rich",  # https://github.com/Textualize/rich
+    "rich", # https://github.com/Textualize/rich
     "ruff",
+    "tensorstore>=0.1.69",
 ]
 
 [tool.uv.sources]
@@ -74,10 +51,10 @@ pydantic-tensorstore = { workspace = true }
 # https://docs.astral.sh/ruff
 [tool.ruff]
 line-length = 88
-target-version = "py39"
+target-version = "py310"
 src = ["src"]
 fix = true
-# unsafe-fixes = true
+unsafe-fixes = true
 
 [tool.ruff.lint]
 pydocstyle = { convention = "numpy" }
@@ -107,7 +84,7 @@ ignore = [
 # https://docs.astral.sh/ruff/formatter/
 [tool.ruff.format]
 docstring-code-format = true
-skip-magic-trailing-comma = false  # default is false
+skip-magic-trailing-comma = false # default is false
 
 # https://docs.pytest.org/
 [tool.pytest.ini_options]
@@ -124,7 +101,7 @@ disallow_any_generics = false
 disallow_subclassing_any = false
 show_error_codes = true
 pretty = true
-# plugins = ["pydantic.mypy"]
+plugins = ["pydantic.mypy"]
 
 # https://coverage.readthedocs.io/
 [tool.coverage.report]

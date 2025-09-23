@@ -1,4 +1,4 @@
-"""Pydantic models for the TensorStore Spec"""
+"""Pydantic models for the TensorStore Spec."""
 
 from importlib.metadata import PackageNotFoundError, version
 
