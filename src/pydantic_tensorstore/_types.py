@@ -197,7 +197,3 @@ class Unit(BaseModel):
 # String constraints for identifiers
 DriverName = Annotated[str, StringConstraints(pattern=r"^[a-zA-Z][a-zA-Z0-9_]*$")]
 ContextResourceName = Annotated[str, StringConstraints(min_length=1)]
-
-# Common JSON-like types
-JsonValue: TypeAlias = str | int | float | bool | None | dict[str, Any] | list[Any]
-JsonObject: TypeAlias = dict[str, JsonValue]

@@ -6,10 +6,13 @@ from annotated_types import Interval, Le
 from pydantic import (
     AfterValidator,
     BaseModel,
+    BeforeValidator,
     Field,
     NonNegativeInt,
     PositiveInt,
+    model_validator,
 )
+from typing_extensions import Self
 
 from pydantic_tensorstore._core.codec import CodecBase
 from pydantic_tensorstore._core.spec import ChunkedTensorStoreKvStoreAdapterSpec
@@ -38,16 +41,26 @@ def _validate_N5_dtype(v: DataType) -> DataType:
 N5DataType: TypeAlias = Annotated[DataType, AfterValidator(_validate_N5_dtype)]
 
 
+def _str_to_compression(v: str | dict) -> dict:
+    r"""A plain string is equivalent to an object with the string as its type.
+
+    For example, \"gzip\" is equivalent to {\"type\": \"gzip\"}.
+    """
+    if isinstance(v, str):
+        return {"type": v}
+    return v
+
+
 class _N5CompressionBlosc(BaseModel):
     type: Literal["blosc"] = "blosc"
     cname: Literal["blosclz", "lz4", "lz4hc", "snappy", "zlib", "zstd"] = Field(
-        description="Blosc compression algorithm"
+        default="lz4", description="Blosc compression algorithm"
     )
     clevel: Annotated[int, Interval(ge=0, le=9)] = Field(
-        description="Specifies the Blosc compression level to use."
+        default=5, description="Specifies the Blosc compression level to use."
     )
     shuffle: Literal[0, 1, 2] = Field(
-        description="Specifies the Blosc shuffle filter to use."
+        default=1, description="Specifies the Blosc shuffle filter to use."
     )
 
 
@@ -85,12 +98,20 @@ class _N5CompressionRaw(BaseModel):
 
 class _N5CompressionXZ(BaseModel):
     type: Literal["xz"] = "xz"
-    preset: Annotated[int, Interval(ge=0, le=9)] = 6
+    preset: Annotated[int, Interval(ge=0, le=9)] = Field(
+        default=6,
+        description="XZ compression preset level (0-9). "
+        "Higher values provide better compression.",
+    )
 
 
 class _N5CompressionZstd(BaseModel):
     type: Literal["zstd"] = "zstd"
-    level: Annotated[int, Le(22)] = 0
+    level: Annotated[int, Le(22)] = Field(
+        default=0,
+        description="Zstandard compression level (≤22). "
+        "Higher values provide better compression.",
+    )
 
 
 N5Compression: TypeAlias = Annotated[
@@ -103,6 +124,7 @@ N5Compression: TypeAlias = Annotated[
         | _N5CompressionZstd
     ),
     Field(discriminator="type"),
+    BeforeValidator(_str_to_compression),
 ]
 
 
@@ -149,6 +171,50 @@ class N5Metadata(BaseModel):
         default=None,
         description="Compression configuration",
     )
+
+    @model_validator(mode="after")
+    def _validate_array_consistency(self) -> Self:
+        """Validate consistency between array dimensions and related fields."""
+        if self.dimensions is not None:
+            dimensions_len = len(self.dimensions)
+
+            # Validate blockSize length matches dimensions
+            if self.blockSize is not None:
+                if len(self.blockSize) != dimensions_len:
+                    raise ValueError(
+                        f"blockSize length ({len(self.blockSize)}) must match "
+                        f"dimensions length ({dimensions_len})"
+                    )
+
+            # Validate axes length matches dimensions
+            if self.axes is not None:
+                if len(self.axes) != dimensions_len:
+                    raise ValueError(
+                        f"axes length ({len(self.axes)}) must match "
+                        f"dimensions length ({dimensions_len})"
+                    )
+
+            # Validate units length matches dimensions
+            if self.units is not None:
+                if len(self.units) != dimensions_len:
+                    raise ValueError(
+                        f"units length ({len(self.units)}) must match "
+                        f"dimensions length ({dimensions_len})"
+                    )
+
+            # Validate resolution length matches dimensions
+            if self.resolution is not None:
+                if len(self.resolution) != dimensions_len:
+                    raise ValueError(
+                        f"resolution length ({len(self.resolution)}) must match "
+                        f"dimensions length ({dimensions_len})"
+                    )
+
+        return self
+
+
+# Rebuild model to resolve forward references
+N5Metadata.model_rebuild()
 
 
 class N5Spec(ChunkedTensorStoreKvStoreAdapterSpec):
