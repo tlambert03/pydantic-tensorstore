@@ -5,9 +5,9 @@ supporting operations like slicing, transposition, and broadcasting.
 """
 
 from collections.abc import Sequence
-from typing import Annotated, Any, ClassVar, Literal
+from typing import Annotated, Any, ClassVar, Literal, TypeAlias
 
-from annotated_types import Interval
+from annotated_types import Interval, Len
 from pydantic import BaseModel, Field, NonNegativeInt, field_validator, model_validator
 from typing_extensions import Self
 
@@ -156,6 +156,10 @@ need not be specified manually.
         return self
 
 
+IntOrInf = Literal["-inf", "+inf"] | int
+ImplicitBound: TypeAlias = Annotated[list[IntOrInf], Len(min_length=1, max_length=1)]
+
+
 class IndexTransform(BaseModel):
     """Index transform specification.
 
@@ -168,15 +172,15 @@ class IndexTransform(BaseModel):
     input_rank: Annotated[int, Interval(ge=0, le=32)] | None = Field(
         default=None, description="Number of input dimensions."
     )
-    input_inclusive_min: list[int | list[int]] | None = Field(
+    input_inclusive_min: list[int | ImplicitBound] | None = Field(
         default=None, description="Inclusive lower bounds of the input domain."
     )
 
-    input_exclusive_max: list[int | list[int]] | None = Field(
+    input_exclusive_max: list[int | ImplicitBound] | None = Field(
         default=None, description="Exclusive upper bounds of the input domain."
     )
 
-    input_inclusive_max: list[int | list[int]] | None = Field(
+    input_inclusive_max: list[int | ImplicitBound] | None = Field(
         default=None, description="Inclusive upper bounds of the input domain."
     )
 

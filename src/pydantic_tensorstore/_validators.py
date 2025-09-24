@@ -8,14 +8,14 @@ if TYPE_CHECKING:
     from pydantic_tensorstore import TensorStoreSpec
 
 
-def validate_spec(spec: Any, strict: bool = True) -> "TensorStoreSpec":
+def validate_spec(spec: Any, strict: bool = False) -> "TensorStoreSpec":
     """Validate a TensorStore specification.
 
     Parameters
     ----------
     spec : dict or TensorStoreSpec
         Specification to validate
-    strict : bool, default True
+    strict : bool, default False
         If True, performs strict validation
 
     Returns

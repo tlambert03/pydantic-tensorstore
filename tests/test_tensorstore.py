@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import pytest
 
 from pydantic_tensorstore import validate_spec
@@ -10,46 +8,293 @@ except ImportError:
     pytest.skip("tensorstore not installed", allow_module_level=True)
 
 
-def test_from_ts_mem_store() -> None:
-    spec_dict = {
-        "driver": "zarr",
-        "kvstore": {"driver": "memory"},
-        "metadata": {
-            "chunks": [10, 11],
-            "shape": [100, 200],
-            "fill_value": None,
-            "dtype": "<u2",
-            "compressor": None,
-            "filters": None,
-            "order": "C",
+# Test cases for round-trip validation
+ROUND_TRIP_TEST_CASES = [
+    # Array driver examples
+    {
+        "id": "array_basic",
+        "spec": {
+            "driver": "array",
+            "array": [[1, 2, 3], [4, 5, 6]],
+            "dtype": "int32",
         },
-    }
+    },
+    {
+        "id": "array_with_transform",
+        "spec": {
+            "driver": "array",
+            "array": [[[1, 2], [3, 4]], [[5, 6], [7, 8]]],
+            "dtype": "float32",
+            "transform": {
+                "input_inclusive_min": [0, 0, 0],
+                "input_exclusive_max": [2, 2, 2],
+            },
+        },
+    },
+    # Zarr v2 examples
+    {
+        "id": "zarr_memory_basic",
+        "spec": {
+            "driver": "zarr",
+            "kvstore": {"driver": "memory"},
+        },
+    },
+    {
+        "id": "zarr_memory_with_metadata",
+        "spec": {
+            "driver": "zarr",
+            "kvstore": {"driver": "memory"},
+            "metadata": {
+                "chunks": [64, 64],
+                "shape": [1000, 1000],
+                "dtype": "<f4",
+                "compressor": {"id": "blosc", "cname": "lz4", "clevel": 5},
+                "order": "C",
+                "fill_value": 0.0,
+            },
+        },
+    },
+    {
+        "id": "zarr_memory_structured_dtype",
+        "spec": {
+            "driver": "zarr",
+            "kvstore": {"driver": "memory"},
+            "metadata": {
+                "chunks": [100],
+                "shape": [1000],
+                "dtype": [["r", "|u1"], ["g", "|u1"], ["b", "|u1"]],
+                "compressor": {"id": "zlib", "level": 6},
+            },
+            "field": "g",
+        },
+    },
+    {
+        "id": "zarr_file_with_path",
+        "spec": {
+            "driver": "zarr",
+            "kvstore": {"driver": "file", "path": "/tmp/test_zarr"},
+            "path": "dataset.zarr",
+            "metadata": {
+                "chunks": [32, 32, 32],
+                "dtype": ">i2",
+                "compressor": {"id": "zstd", "level": 3},
+                "dimension_separator": "/",
+            },
+        },
+    },
+    # Zarr v3 examples
+    {
+        "id": "zarr3_basic",
+        "spec": {
+            "driver": "zarr3",
+            "kvstore": {"driver": "memory"},
+            "metadata": {
+                "shape": [100, 200],
+                "data_type": "uint16",
+                "chunk_grid": {
+                    "name": "regular",
+                    "configuration": {"chunk_shape": [50, 100]},
+                },
+            },
+        },
+    },
+    {
+        "id": "zarr3_file",
+        "spec": {
+            "driver": "zarr3",
+            "kvstore": {
+                "driver": "file",
+                "path": "/tmp/zarr_test",
+            },
+            "metadata": {
+                "shape": [3, 4, 5],
+                "data_type": "float32",
+                "chunk_key_encoding": {"name": "v2"},
+            },
+            "create": True,
+            "delete_existing": True,
+        },
+    },
+    {
+        "id": "zarr3_with_codecs",
+        "spec": {
+            "driver": "zarr3",
+            "kvstore": {"driver": "memory"},
+            "metadata": {
+                "shape": [1000, 500, 100],
+                "data_type": "float32",
+                "chunk_grid": {
+                    "name": "regular",
+                    "configuration": {"chunk_shape": [100, 100, 50]},
+                },
+                "codecs": [
+                    {"name": "bytes", "configuration": {"endian": "little"}},
+                    {"name": "blosc", "configuration": {"cname": "zstd", "clevel": 3}},
+                ],
+                "fill_value": -1.0,
+            },
+        },
+    },
+    {
+        "id": "zarr3_with_sharding",
+        "spec": {
+            "driver": "zarr3",
+            "kvstore": {"driver": "memory"},
+            "metadata": {
+                "shape": [10000, 10000],
+                "data_type": "uint8",
+                "chunk_grid": {
+                    "name": "regular",
+                    "configuration": {"chunk_shape": [1000, 1000]},
+                },
+                "codecs": [
+                    {
+                        "name": "sharding_indexed",
+                        "configuration": {
+                            "chunk_shape": [100, 100],
+                            "codecs": [
+                                {"name": "bytes"},
+                                {"name": "gzip", "configuration": {"level": 6}},
+                            ],
+                        },
+                    },
+                ],
+            },
+        },
+    },
+    # N5 examples
+    {
+        "id": "n5_basic",
+        "spec": {
+            "driver": "n5",
+            "kvstore": {"driver": "memory"},
+            "metadata": {
+                "dimensions": [1000, 1000, 100],
+                "blockSize": [64, 64, 32],
+                "dataType": "uint16",
+            },
+        },
+    },
+    {
+        "id": "n5_with_compression",
+        "spec": {
+            "driver": "n5",
+            "kvstore": {"driver": "file", "path": "/tmp/n5_test"},
+            "path": "dataset",
+            "metadata": {
+                "dimensions": [2000, 2000, 200],
+                "blockSize": [128, 128, 64],
+                "dataType": "float32",
+                "compression": {"type": "gzip", "level": 6},
+            },
+        },
+    },
+    {
+        "id": "n5_bzip2_compression",
+        "spec": {
+            "driver": "n5",
+            "kvstore": {"driver": "memory"},
+            "metadata": {
+                "dimensions": [500, 500],
+                "blockSize": [64, 64],
+                "dataType": "int32",
+                "compression": {"type": "bzip2"},
+            },
+        },
+    },
+    # Neuroglancer examples
+    {
+        "id": "neuroglancer_basic",
+        "spec": {
+            "driver": "neuroglancer_precomputed",
+            "kvstore": {"driver": "memory"},
+            "multiscale_metadata": {
+                "type": "image",
+                "data_type": "uint8",
+                "num_channels": 1,
+            },
+            "scale_metadata": {
+                "key": "1_1_1",
+                "size": (1024, 1024, 100),
+                "chunk_size": (64, 64, 16),
+                "resolution": (1.0, 1.0, 1.0),
+                "encoding": "raw",
+            },
+        },
+    },
+    {
+        "id": "neuroglancer_jpeg",
+        "spec": {
+            "driver": "neuroglancer_precomputed",
+            "kvstore": {"driver": "memory"},
+            "scale_metadata": {
+                "key": "2_2_2",
+                "size": (512, 512, 200),
+                "chunk_size": (128, 128, 32),
+                "resolution": (2.0, 2.0, 2.0),
+                "encoding": "jpeg",
+                "jpeg_quality": 85,
+            },
+        },
+    },
+    {
+        "id": "neuroglancer_segmentation",
+        "spec": {
+            "driver": "neuroglancer_precomputed",
+            "kvstore": {"driver": "memory"},
+            "multiscale_metadata": {
+                "type": "segmentation",
+                "data_type": "uint32",
+                "num_channels": 1,
+            },
+            "scale_metadata": {
+                "key": "1_1_1",
+                "size": (2048, 2048, 512),
+                "chunk_size": (128, 128, 64),
+                "resolution": (8.0, 8.0, 8.0),
+                "encoding": "compressed_segmentation",
+                "compressed_segmentation_block_size": (8, 8, 8),
+            },
+        },
+    },
+    # With various contexts and options
+    {
+        "id": "with_cache_pool",
+        "spec": {
+            "driver": "zarr",
+            "kvstore": {"driver": "memory"},
+            "context": {"cache_pool": {"total_bytes_limit": 10_000_000}},
+        },
+    },
+    {
+        "id": "with_creation_flags",
+        "spec": {
+            "driver": "zarr3",
+            "kvstore": {"driver": "memory"},
+            "create": True,
+            "delete_existing": True,
+            "metadata": {
+                "shape": [100, 100],
+                "data_type": "int16",
+            },
+        },
+    },
+]
+
+
+@pytest.mark.parametrize("test_case", ROUND_TRIP_TEST_CASES, ids=lambda x: x["id"])
+def test_round_trip_validation(test_case: dict) -> None:
+    """Test round-trip validation: dict -> our_spec -> tensorstore -> our_spec."""
+    spec_dict = test_case["spec"]
+
+    # ensure tensorstore recognizes the spec
     ts_spec = ts.Spec(spec_dict)
-    our_spec = validate_spec(ts_spec)
-    # note... this will NOT be equal to our_spec because tensorstore
-    # normalizes the spec, moving metadata fields to the top level
-    assert validate_spec(spec_dict)
 
-    assert our_spec.to_tensorstore() == ts_spec
+    # First validate our spec
+    our_spec = validate_spec(spec_dict)
 
+    # Validate that we can also validate the tensorstore spec object
+    validate_spec(ts_spec)
 
-def test_from_ts_zarr_store(tmp_path: Path) -> None:
-    spec_dict = {
-        "driver": "zarr3",
-        "kvstore": {
-            "driver": "file",
-            "path": str(tmp_path / "zarr_test"),
-        },
-        "metadata": {
-            "shape": [3, 4, 5],
-            "data_type": "float32",
-            "chunk_key_encoding": {"name": "v2"},
-        },
-        "create": True,
-        "delete_existing": True,
-    }
-    ts_spec = ts.Spec(spec_dict)
-    our_spec = validate_spec(ts_spec)
-    assert validate_spec(spec_dict)
-
+    # The round trip should work
     assert our_spec.to_tensorstore() == ts_spec

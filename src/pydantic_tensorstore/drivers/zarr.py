@@ -163,10 +163,54 @@ class Zarr2Spec(ChunkedTensorStoreKvStoreAdapterSpec):
 
     driver: Literal["zarr"] = "zarr"
 
+    field: str | None = Field(
+        default=None,
+        description=(
+            "Name of field to open."
+            "Must be specified if the metadata.dtype specified in the array metadata "
+            "has more than one field."
+        ),
+    )
+
     metadata: ZarrMetadata | None = Field(
         default=None,
         description="Zarr metadata specification",
     )
+    metadata_key: str = Field(
+        default=".zarray",
+        description=(
+            "Key in the key-value store where the Zarr metadata is stored. "
+            "In rare cases it may be useful to specify a non-default value, e.g. "
+            "'zarray' to avoid problems caused by the leading dot. However, be aware "
+            "that specifying a non-default value breaks compatibility with other "
+            "zarr implementations."
+        ),
+    )
+    key_encoding: Literal[".", "/"] = Field(
+        default=".",
+        description=(
+            "Specifies the encoding of chunk indices into key-value store keys. "
+        ),
+        deprecated="Deprecated. Equivalent to specifying metadata.dimension_separator.",
+    )
+
+    @model_validator(mode="after")
+    def _validate_metadata(self) -> "Self":
+        """Validate that metadata is provided."""
+        if self.metadata is not None:
+            if isinstance(self.metadata.dtype, list) and len(self.metadata.dtype) > 1:
+                if not self.field:
+                    raise ValueError(
+                        "`field` must be specified if the metadata.dtype specified in "
+                        "the array metadata has more than one field."
+                    )
+                field_names = [f[0] for f in self.metadata.dtype]
+                if self.field not in field_names:
+                    raise ValueError(
+                        f"field '{self.field}' not found in metadata.dtype fields "
+                        f"{field_names}"
+                    )
+        return self
 
 
 class _Zarr2Compressor(BaseModel):
