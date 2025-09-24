@@ -10,11 +10,15 @@ from pydantic import (
     Field,
     NonNegativeInt,
     PositiveInt,
+    field_validator,
+    model_validator,
 )
+from typing_extensions import Self
 
 from pydantic_tensorstore._types import DataType
 from pydantic_tensorstore.core.codec import CodecBase
 from pydantic_tensorstore.core.spec import ChunkedTensorStoreKvStoreAdapterSpec
+from pydantic_tensorstore.core.transform import _validate_labels
 
 VALID_ZARR3_DTYPES: set[DataType] = {
     DataType.BFLOAT16,
@@ -63,8 +67,8 @@ class Zarr3CodecBlosc(_Zarr3SingleCodec):
             default="lz4",
             description="Compression algorithm",
         )
-        clevel: Annotated[int, Interval(ge=0, le=5)] = Field(
-            default=5, ge=0, le=9, description="Compression level (0-9)"
+        clevel: Annotated[int, Interval(ge=0, le=9)] = Field(
+            default=5, description="Compression level (0-9)"
         )
         shuffle: Literal["noshuffle", "shuffle", "bitshuffle"] | None = Field(
             default=None, description="Shuffle filter"
@@ -90,7 +94,7 @@ class Zarr3CodecBytes(_Zarr3SingleCodec):
     class BytesConfig(BaseModel):
         """Configuration for the bytes codec."""
 
-        endial: Literal["little", "big"] | None = Field(
+        endian: Literal["little", "big"] | None = Field(
             default=None, description="Byte order"
         )
 
@@ -100,14 +104,14 @@ class Zarr3CodecBytes(_Zarr3SingleCodec):
     )
 
 
-class Zarr3CodecBCrc32c(_Zarr3SingleCodec):
+class Zarr3CodecCRC32C(_Zarr3SingleCodec):
     """Appends a CRC-32C checksum to detect data corruption."""
 
-    class Crc32cConfig(BaseModel):
+    class CRC32CConfig(BaseModel):
         """No configuration options are supported."""
 
     name: Literal["crc32c"] = "crc32c"
-    configuration: Crc32cConfig | None = Field(
+    configuration: CRC32CConfig | None = Field(
         default=None, description="No configuration options are supported."
     )
 
@@ -214,18 +218,21 @@ def _str_to_codec(v: str) -> dict[str, Any]:
 Zarr3SingleCodec: TypeAlias = Annotated[
     Zarr3CodecBlosc
     | Zarr3CodecBytes
-    | Zarr3CodecBCrc32c
+    | Zarr3CodecCRC32C
     | Zarr3CodecGzip
     | Zarr3CodecShardingIndexed
     | Zarr3CodecTranspose
     | Zarr3CodecZstd,
+    Field(discriminator="name"),
     BeforeValidator(_str_to_codec),
 ]
 Zarr3CodecChain: TypeAlias = list[Zarr3SingleCodec]
 Zarr3CodecShardingIndexed.ShardingIndexedConfig.model_rebuild()
 
 
-class _ZarrChunkConfiguration(BaseModel):
+class Zarr3ChunkConfiguration(BaseModel):
+    """Configuration for the regular chunk grid."""
+
     chunk_shape: list[PositiveInt] | None = Field(
         default=None,
         description="""Chunk dimensions.
@@ -240,12 +247,14 @@ class _ZarrChunkConfiguration(BaseModel):
     )
 
 
-class _ZarrChunkGrid(BaseModel):
+class Zarr3ChunkGrid(BaseModel):
+    """Chunk grid specification."""
+
     name: Literal["regular"] = Field(
         default="regular",
         description="Chunk grid type (only 'regular' is supported)",
     )
-    configuration: _ZarrChunkConfiguration
+    configuration: Zarr3ChunkConfiguration
 
 
 class _DefaultChunkKeyEncoding(BaseModel):
@@ -294,7 +303,7 @@ class Zarr3Metadata(BaseModel):
         description="Data type specification",
     )
 
-    chunk_grid: _ZarrChunkGrid | None = Field(
+    chunk_grid: Zarr3ChunkGrid | None = Field(
         default=None,
         description="Chunk grid specification",
     )
@@ -323,6 +332,27 @@ class Zarr3Metadata(BaseModel):
         default=None,
         description="Names for each dimension",
     )
+
+    _v: Any = field_validator("dimension_names", mode="after")(
+        classmethod(_validate_labels)
+    )
+
+    @model_validator(mode="after")
+    def _validate_chunk_shape_length(self) -> Self:
+        """Validate that chunk_shape length matches array shape length."""
+        if (
+            self.shape is not None
+            and self.chunk_grid is not None
+            and self.chunk_grid.configuration.chunk_shape is not None
+        ):
+            shape_len = len(self.shape)
+            chunk_shape_len = len(self.chunk_grid.configuration.chunk_shape)
+            if shape_len != chunk_shape_len:
+                raise ValueError(
+                    f"chunk_shape length ({chunk_shape_len}) must match "
+                    f"shape length ({shape_len})"
+                )
+        return self
 
 
 class Zarr3Spec(ChunkedTensorStoreKvStoreAdapterSpec):

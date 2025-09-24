@@ -161,14 +161,17 @@ class _N5CompressionZstd(BaseModel):
     level: Annotated[int, Le(22)] = 0
 
 
-N5Compression: TypeAlias = (
-    _N5CompressionBlosc
-    | _N5CompressionBzip2
-    | _N5CompressionGzip
-    | _N5CompressionRaw
-    | _N5CompressionXZ
-    | _N5CompressionZstd
-)
+N5Compression: TypeAlias = Annotated[
+    (
+        _N5CompressionBlosc
+        | _N5CompressionBzip2
+        | _N5CompressionGzip
+        | _N5CompressionRaw
+        | _N5CompressionXZ
+        | _N5CompressionZstd
+    ),
+    Field(discriminator="type"),
+]
 
 
 class N5Codec(CodecBase):
