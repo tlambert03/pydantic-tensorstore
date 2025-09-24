@@ -94,7 +94,7 @@ class DataType(str, Enum):
                     return DataType(v)
                 with suppress(ValueError, TypeError):
                     return DataType(np.dtype(v).name)
-                raise ValueError(
+                raise ValueError(  # pragma: no cover
                     f"Invalid string data type: {v}.  Must be one of {members}"
                 )
             return v

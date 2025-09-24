@@ -20,13 +20,6 @@ class CachePool(BaseModel):
         gt=0,
     )
 
-    def model_dump_json(self, **kwargs: Any) -> str:
-        """Serialize to JSON, excluding defaults if empty."""
-        data = self.model_dump(exclude_defaults=True, **kwargs)
-        if not data:
-            return "{}"
-        return super().model_dump_json(**kwargs)
-
 
 class DataCopyConcurrency(BaseModel):
     """Concurrency limits for data copy operations."""

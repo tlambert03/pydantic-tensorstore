@@ -1,3 +1,4 @@
+from importlib.metadata import version
 from pathlib import Path
 
 import pytest
@@ -292,32 +293,6 @@ ROUND_TRIP_TEST_CASES = [
         },
         "skip_creation": True,
     },
-    # Auto driver examples (validation-only, no actual creation)
-    {
-        "id": "auto_memory_basic",
-        "spec": {
-            "driver": "auto",
-            "kvstore": {"driver": "memory"},
-        },
-        "skip_creation": True,
-    },
-    {
-        "id": "auto_file_basic",
-        "spec": {
-            "driver": "auto",
-            "kvstore": {"driver": "file", "path": "auto_test"},
-        },
-        "skip_creation": True,
-    },
-    {
-        "id": "auto_with_dtype",
-        "spec": {
-            "driver": "auto",
-            "kvstore": {"driver": "memory"},
-            "dtype": "float32",
-        },
-        "skip_creation": True,
-    },
     # With various contexts and options
     {
         "id": "with_cache_pool",
@@ -342,6 +317,37 @@ ROUND_TRIP_TEST_CASES = [
         },
     },
 ]
+
+ts_version = tuple(int(x) for x in version("tensorstore").split(".")[:3])
+if ts_version >= (0, 1, 76):
+    ROUND_TRIP_TEST_CASES += [
+        # Auto driver examples (validation-only, no actual creation)
+        {
+            "id": "auto_memory_basic",
+            "spec": {
+                "driver": "auto",
+                "kvstore": {"driver": "memory"},
+            },
+            "skip_creation": True,
+        },
+        {
+            "id": "auto_file_basic",
+            "spec": {
+                "driver": "auto",
+                "kvstore": {"driver": "file", "path": "auto_test"},
+            },
+            "skip_creation": True,
+        },
+        {
+            "id": "auto_with_dtype",
+            "spec": {
+                "driver": "auto",
+                "kvstore": {"driver": "memory"},
+                "dtype": "float32",
+            },
+            "skip_creation": True,
+        },
+    ]
 
 
 @pytest.mark.parametrize("test_case", ROUND_TRIP_TEST_CASES, ids=lambda x: x["id"])
@@ -384,7 +390,6 @@ def test_round_trip_validation(
 
 def test_example() -> None:
     # from the readme
-    import pydantic_tensorstore as pts
 
     spec = pts.Zarr2Spec(
         kvstore=pts.MemoryKvStore(),
@@ -396,3 +401,67 @@ def test_example() -> None:
     )
 
     spec.to_tensorstore()
+
+
+def test_kvstore_string_parsing() -> None:
+    """Test kvstore string parsing functionality."""
+
+    # Test file:// URLs
+    spec = pts.validate_spec(
+        {
+            "driver": "zarr",
+            "kvstore": "file:///tmp/test",
+            "create": True,
+            "metadata": {"shape": [10, 10], "dtype": "<f4"},
+        }
+    )
+    assert isinstance(spec.kvstore, pts.FileKvStore)
+    assert spec.kvstore.path == "/tmp/test"
+
+    # Test memory:// URLs
+    spec = pts.validate_spec(
+        {
+            "driver": "zarr",
+            "kvstore": "memory://",
+            "create": True,
+            "metadata": {"shape": [10, 10], "dtype": "<f4"},
+        }
+    )
+    assert isinstance(spec.kvstore, pts.MemoryKvStore)
+
+    # Test memory:// URLs with path
+    spec = pts.validate_spec(
+        {
+            "driver": "zarr",
+            "kvstore": "memory://test_path",
+            "create": True,
+            "metadata": {"shape": [10, 10], "dtype": "<f4"},
+        }
+    )
+    assert isinstance(spec.kvstore, pts.MemoryKvStore)
+    assert spec.kvstore.path == "test_path"
+
+    # Test s3:// URLs
+    spec = pts.validate_spec(
+        {
+            "driver": "zarr",
+            "kvstore": "s3://bucket-name",
+            "create": True,
+            "metadata": {"shape": [10, 10], "dtype": "<f4"},
+        }
+    )
+    assert isinstance(spec.kvstore, pts.S3KvStore)
+    assert spec.kvstore.bucket == "bucket-name"
+
+    # Test s3:// URLs with path
+    spec = pts.validate_spec(
+        {
+            "driver": "zarr",
+            "kvstore": "s3://bucket-name/path/to/data",
+            "create": True,
+            "metadata": {"shape": [10, 10], "dtype": "<f4"},
+        }
+    )
+    assert isinstance(spec.kvstore, pts.S3KvStore)
+    assert spec.kvstore.bucket == "bucket-name"
+    assert spec.kvstore.path == "path/to/data"
