@@ -21,12 +21,12 @@ However, TensorStore has some pain points that this library addresses:
 
 **pydantic-tensorstore** solves these issues by providing:
 
-✅ **Full type safety** with Pydantic v2 models
-✅ **Excellent IDE support** with autocomplete and validation
-✅ **Clear, actionable error messages** when specifications are invalid
-✅ **Runtime validation** with detailed error reporting
-✅ **Seamless conversion** to native TensorStore specs
-✅ **Comprehensive documentation** embedded in the type system
+- [x] **Full type safety** with Pydantic v2 models
+- [x] **Excellent IDE support** with autocomplete and validation
+- [x] **Clear, actionable error messages** when specifications are invalid
+- [x] **Runtime validation** with detailed error reporting
+- [x] **Seamless conversion** to native TensorStore specs
+- [x] **Comprehensive documentation** embedded in the type system
 
 ## Quick Example
 
