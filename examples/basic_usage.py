@@ -22,13 +22,13 @@ def example_array_spec() -> None:
 
     # Direct creation
     array_spec = ArraySpec(driver="array", array=[[1, 2, 3], [4, 5, 6]], dtype="int32")
-    print(f"Array spec shape: {array_spec.get_array_shape()}")
-    print(f"Array spec ndim: {array_spec.get_array_ndim()}")
+    print(f"Array spec: {array_spec}")
+    assert isinstance(array_spec.array, np.ndarray)
 
     # With NumPy array
     numpy_data = np.random.randn(10, 20).astype(np.float32)
     numpy_spec = ArraySpec(driver="array", array=numpy_data, dtype="float32")
-    print(f"NumPy spec shape: {numpy_spec.get_array_shape()}")
+    print(f"NumPy spec shape: {numpy_spec}")
 
 
 def example_zarr_spec() -> None:
