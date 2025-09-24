@@ -61,7 +61,7 @@ spec = {
 # Hope it works! 🤞
 ```
 
-Use type-safe, validated specifications:
+Use type-safe, validated specifications with IDE autocompletion:
 
 ```python
 #  pydantic-tensorstore (full types, validation, IDE support)
