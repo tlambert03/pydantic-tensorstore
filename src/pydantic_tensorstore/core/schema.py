@@ -4,7 +4,7 @@ The Schema defines the structure of data including data type, domain,
 chunk layout, codec, fill value, and dimension units.
 """
 
-from typing import Annotated, Any, ClassVar
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar
 
 from annotated_types import Interval
 from pydantic import BaseModel, Field
@@ -12,6 +12,9 @@ from pydantic import BaseModel, Field
 from pydantic_tensorstore._types import DataType, Unit
 from pydantic_tensorstore.core.chunk_layout import ChunkLayout
 from pydantic_tensorstore.core.transform import IndexDomain
+
+if TYPE_CHECKING:
+    from pydantic_tensorstore.drivers import Codec
 
 
 class Schema(BaseModel):
@@ -41,7 +44,7 @@ class Schema(BaseModel):
         default=None, description="Chunk layout constraints"
     )
 
-    codec: Any | None = Field(
+    codec: "Codec | None" = Field(
         default=None, description="Codec specification for compression/encoding"
     )
 

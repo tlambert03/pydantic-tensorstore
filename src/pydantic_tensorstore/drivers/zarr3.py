@@ -2,6 +2,7 @@
 
 from typing import Annotated, Any, Literal, TypeAlias
 
+from annotated_types import Ge, Interval
 from pydantic import (
     AfterValidator,
     BaseModel,
@@ -12,6 +13,7 @@ from pydantic import (
 )
 
 from pydantic_tensorstore._types import DataType
+from pydantic_tensorstore.core.codec import CodecBase
 from pydantic_tensorstore.core.spec import ChunkedTensorStoreKvStoreAdapterSpec
 
 VALID_ZARR3_DTYPES: set[DataType] = {
@@ -44,6 +46,185 @@ Zarr3DataType: TypeAlias = Annotated[
 ]
 
 
+class _Zarr3SingleCodec(BaseModel):
+    """Base class for single Zarr3 codec specifications."""
+
+    # name: str
+    # configuration: BaseModel
+
+
+class Zarr3CodecBlosc(_Zarr3SingleCodec):
+    """Specifies Blosc compression."""
+
+    class BloscConfig(BaseModel):
+        """Configuration for the Blosc codec."""
+
+        cname: Literal["blosclz", "lz4", "lz4hc", "snappy", "zlib", "zstd"] = Field(
+            default="lz4",
+            description="Compression algorithm",
+        )
+        clevel: Annotated[int, Interval(ge=0, le=5)] = Field(
+            default=5, ge=0, le=9, description="Compression level (0-9)"
+        )
+        shuffle: Literal["noshuffle", "shuffle", "bitshuffle"] | None = Field(
+            default=None, description="Shuffle filter"
+        )
+        typesize: Annotated[int, Interval(ge=1, le=255)] | None = Field(
+            default=1, description="Specifies the stride in bytes for shuffling."
+        )
+        blocksize: Annotated[int, Ge(0)] | None = Field(
+            default=0,
+            description="Blosc block size in bytes. The default value of 0 causes the "
+            "block size to be chosen automatically.",
+        )
+
+    name: Literal["blosc"] = "blosc"
+    configuration: BloscConfig | None = Field(
+        default=None, description="Blosc codec configuration"
+    )
+
+
+class Zarr3CodecBytes(_Zarr3SingleCodec):
+    """Fixed-size encoding for numeric types."""
+
+    class BytesConfig(BaseModel):
+        """Configuration for the bytes codec."""
+
+        endial: Literal["little", "big"] | None = Field(
+            default=None, description="Byte order"
+        )
+
+    name: Literal["bytes"] = "bytes"
+    configuration: BytesConfig | None = Field(
+        default=None, description="Bytes codec configuration"
+    )
+
+
+class Zarr3CodecBCrc32c(_Zarr3SingleCodec):
+    """Appends a CRC-32C checksum to detect data corruption."""
+
+    class Crc32cConfig(BaseModel):
+        """No configuration options are supported."""
+
+    name: Literal["crc32c"] = "crc32c"
+    configuration: Crc32cConfig | None = Field(
+        default=None, description="No configuration options are supported."
+    )
+
+
+class Zarr3CodecGzip(_Zarr3SingleCodec):
+    """Specifies gzip compression."""
+
+    class GzipConfig(BaseModel):
+        """Gzip codec configuration. (not documented in tensorstore)."""
+
+        level: Annotated[int, Interval(ge=-1, le=9)] = Field(
+            default=-1, description="Compression level (0-9)"
+        )
+
+    name: Literal["gzip"] = "gzip"
+    configuration: GzipConfig | None = Field(
+        default=None, description="Gzip codec configuration"
+    )
+
+
+class Zarr3CodecShardingIndexed(_Zarr3SingleCodec):
+    """Sharding codec that enables hierarchical chunking."""
+
+    class ShardingIndexedConfig(BaseModel):
+        """Configuration for the sharding indexed codec."""
+
+        chunk_shape: list[PositiveInt] | None = Field(
+            default=None, description="Shape of each sub-chunk."
+        )
+        codecs: "Zarr3CodecChain | None" = Field(
+            default=None,
+            description=(
+                "Sub-chunk codec chain, used to encode/decode individual sub-chunks."
+            ),
+        )
+        index_codecs: "Zarr3CodecChain | None" = Field(
+            default=None,
+            description=(
+                "Shard index codec chain, used to encode/decode the shard index."
+            ),
+        )
+        index_location: Literal["start", "end"] = Field(
+            default="end", description="Location of the shard index."
+        )
+
+    name: Literal["sharding_indexed"] = "sharding_indexed"
+    configuration: ShardingIndexedConfig | None = Field(
+        default=None, description="Sharding indexed codec configuration"
+    )
+
+
+class Zarr3CodecTranspose(_Zarr3SingleCodec):
+    """Transposes the dimensions of an array."""
+
+    class TransposeConfig(BaseModel):
+        """Configuration for the transpose codec."""
+
+        order: list[int | Literal["F", "C"]] | None = Field(
+            default=None,
+            description=(
+                "Permutation of the dimensions. "
+                "https://google.github.io/tensorstore/driver/zarr3/index.html#json-driver/zarr3/Codec/transpose.configuration.order"
+            ),
+        )
+
+    name: Literal["transpose"] = "transpose"
+    configuration: TransposeConfig | None = Field(
+        default=None, description="Transpose codec configuration"
+    )
+
+
+class Zarr3CodecZstd(_Zarr3SingleCodec):
+    """Specifies Zstd compression."""
+
+    class ZstdConfig(BaseModel):
+        """Zstd codec configuration."""
+
+        level: Annotated[int, Interval(ge=-131072, le=22)] = Field(
+            default=1,
+            description="Compression level (-131072 to 22). Higher level provides "
+            "improved density at the cost of compression speed.",
+        )
+        checksum: bool = Field(
+            default=False, description="Whether to include a checksum."
+        )
+
+    name: Literal["zstd"] = "zstd"
+    configuration: ZstdConfig | None = Field(
+        default=None, description="Zstandard codec configuration"
+    )
+
+
+def _str_to_codec(v: str) -> dict[str, Any]:
+    """A plain string is equivalent to an object with the string as its name.
+
+    For example, "crc32c" is equivalent to {"name": "crc32c"}.
+    """
+    if isinstance(v, str):
+        return {"name": v}
+    return v
+
+
+#  TODO
+Zarr3SingleCodec: TypeAlias = Annotated[
+    Zarr3CodecBlosc
+    | Zarr3CodecBytes
+    | Zarr3CodecBCrc32c
+    | Zarr3CodecGzip
+    | Zarr3CodecShardingIndexed
+    | Zarr3CodecTranspose
+    | Zarr3CodecZstd,
+    BeforeValidator(_str_to_codec),
+]
+Zarr3CodecChain: TypeAlias = list[Zarr3SingleCodec]
+Zarr3CodecShardingIndexed.ShardingIndexedConfig.model_rebuild()
+
+
 class _ZarrChunkConfiguration(BaseModel):
     chunk_shape: list[PositiveInt] | None = Field(
         default=None,
@@ -65,17 +246,6 @@ class _ZarrChunkGrid(BaseModel):
         description="Chunk grid type (only 'regular' is supported)",
     )
     configuration: _ZarrChunkConfiguration
-
-
-def _str_to_codec(v: str) -> dict[str, Any]:
-    if isinstance(v, str):
-        return {"name": v}
-    return v
-
-
-#  TODO
-SingleCodec: TypeAlias = Annotated[Any, BeforeValidator(_str_to_codec)]
-CodecChain: TypeAlias = list[SingleCodec]
 
 
 class _DefaultChunkKeyEncoding(BaseModel):
@@ -139,7 +309,7 @@ class Zarr3Metadata(BaseModel):
         description="Fill value for uninitialized chunks",
     )
 
-    codecs: CodecChain | None = Field(
+    codecs: Zarr3CodecChain | None = Field(
         default=None,
         description="Codec pipeline for compression and encoding",
     )
@@ -163,4 +333,13 @@ class Zarr3Spec(ChunkedTensorStoreKvStoreAdapterSpec):
     metadata: Zarr3Metadata | None = Field(
         default=None,
         description="Zarr v3 metadata specification",
+    )
+
+
+class Zarr3Codec(CodecBase):
+    """Zarr3 codec specification."""
+
+    driver: Literal["zarr3"] = "zarr3"
+    codecs: Zarr3CodecChain | None = Field(
+        default=None, description="Specifies a chain of codecs."
     )

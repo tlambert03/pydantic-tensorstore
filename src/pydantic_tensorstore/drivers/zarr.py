@@ -5,6 +5,7 @@ from typing import Any, ClassVar, Literal
 from pydantic import BaseModel, Field, field_validator
 
 from pydantic_tensorstore._types import JsonObject
+from pydantic_tensorstore.core.codec import CodecBase
 from pydantic_tensorstore.core.spec import ChunkedTensorStoreKvStoreAdapterSpec
 
 
@@ -71,7 +72,7 @@ class ZarrMetadata(BaseModel):
         return v
 
 
-class ZarrSpec(ChunkedTensorStoreKvStoreAdapterSpec):
+class Zarr2Spec(ChunkedTensorStoreKvStoreAdapterSpec):
     """Zarr driver specification for Zarr v2 format."""
 
     driver: Literal["zarr"] = "zarr"
@@ -80,3 +81,9 @@ class ZarrSpec(ChunkedTensorStoreKvStoreAdapterSpec):
         default=None,
         description="Zarr metadata specification",
     )
+
+
+class Zarr2Codec(CodecBase):
+    """Zarr2 codec specification."""
+
+    driver: Literal["zarr"] = "zarr"

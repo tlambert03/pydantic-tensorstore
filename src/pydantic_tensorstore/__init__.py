@@ -27,14 +27,24 @@ from pydantic_tensorstore.core import (
     Context,
     IndexTransform,
     Schema,
-    TensorStoreSpec,
 )
-from pydantic_tensorstore.drivers import ArraySpec, N5Spec, Zarr3Spec, ZarrSpec
+from pydantic_tensorstore.drivers import (
+    ArraySpec,
+    Codec,
+    N5Spec,
+    TensorStoreSpec,
+    Zarr2Spec,
+    Zarr3Spec,
+)
 from pydantic_tensorstore.kvstore import FileKvStore, KvStore, MemoryKvStore, S3KvStore
+
+# FIXME: deal with circular references to Codecs
+Schema.model_rebuild()
 
 __all__ = [
     "ArraySpec",
     "ChunkedTensorStoreKvStoreAdapterSpec",
+    "Codec",
     "Context",
     "DataType",
     "FileKvStore",
@@ -46,7 +56,7 @@ __all__ = [
     "S3KvStore",
     "Schema",
     "TensorStoreSpec",
+    "Zarr2Spec",
     "Zarr3Spec",
-    "ZarrSpec",
     "validate_spec",
 ]

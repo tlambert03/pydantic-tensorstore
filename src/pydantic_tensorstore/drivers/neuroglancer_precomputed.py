@@ -4,6 +4,7 @@ from typing import Any, Literal
 
 from pydantic import Field
 
+from pydantic_tensorstore.core.codec import CodecBase
 from pydantic_tensorstore.core.spec import ChunkedTensorStoreKvStoreAdapterSpec
 
 
@@ -27,3 +28,9 @@ class NeuroglancerPrecomputedSpec(ChunkedTensorStoreKvStoreAdapterSpec):
         default=None,
         description="Scale-specific metadata",
     )
+
+
+class NeuroglancerPrecomputedCodec(CodecBase):
+    """Neuroglancer Precomputed codec specification."""
+
+    driver: Literal["neuroglancer_precomputed"] = "neuroglancer_precomputed"

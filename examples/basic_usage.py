@@ -11,7 +11,7 @@ import numpy as np
 from pydantic_tensorstore import (
     ArraySpec,
     N5Spec,
-    ZarrSpec,
+    Zarr2Spec,
     validate_spec,
 )
 
@@ -36,7 +36,7 @@ def example_zarr_spec() -> None:
     print("\n=== Zarr Spec Examples ===")
 
     # Direct creation
-    zarr_spec = ZarrSpec(
+    zarr_spec = Zarr2Spec(
         driver="zarr",
         kvstore={"driver": "memory"},
         path="my_array.zarr",
@@ -49,7 +49,7 @@ def example_zarr_spec() -> None:
     print(f"Zarr spec: {zarr_spec}")
 
     # With file storage
-    file_zarr_spec = ZarrSpec(
+    file_zarr_spec = Zarr2Spec(
         driver="zarr",
         kvstore={"driver": "file", "path": "/tmp/zarr_data/"},
         path="dataset.zarr",
