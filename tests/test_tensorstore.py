@@ -292,6 +292,32 @@ ROUND_TRIP_TEST_CASES = [
         },
         "skip_creation": True,
     },
+    # Auto driver examples (validation-only, no actual creation)
+    {
+        "id": "auto_memory_basic",
+        "spec": {
+            "driver": "auto",
+            "kvstore": {"driver": "memory"},
+        },
+        "skip_creation": True,
+    },
+    {
+        "id": "auto_file_basic",
+        "spec": {
+            "driver": "auto",
+            "kvstore": {"driver": "file", "path": "auto_test"},
+        },
+        "skip_creation": True,
+    },
+    {
+        "id": "auto_with_dtype",
+        "spec": {
+            "driver": "auto",
+            "kvstore": {"driver": "memory"},
+            "dtype": "float32",
+        },
+        "skip_creation": True,
+    },
     # With various contexts and options
     {
         "id": "with_cache_pool",

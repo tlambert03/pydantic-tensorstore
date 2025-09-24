@@ -53,6 +53,9 @@ from pydantic_tensorstore._drivers import Codec, TensorStoreSpec
 # Import Array-specific classes
 from pydantic_tensorstore._drivers.array import ArraySpec
 
+# Import Auto-specific classes
+from pydantic_tensorstore._drivers.auto import AutoSpec
+
 # Import N5-specific classes
 from pydantic_tensorstore._drivers.n5 import (
     VALID_N5_DTYPES,
@@ -73,6 +76,9 @@ from pydantic_tensorstore._drivers.neuroglancer_precomputed import (
     NeuroglancerScaleMetadata,
     NeuroglancerShardingSpec,
 )
+
+# Import TIFF-specific classes
+from pydantic_tensorstore._drivers.tiff import TiffSpec
 
 # Import Zarr v2-specific classes
 from pydantic_tensorstore._drivers.zarr import (
@@ -140,6 +146,7 @@ __all__ = [
     "VALID_NEUROGLANCER_DTYPES",
     "VALID_ZARR3_DTYPES",
     "ArraySpec",
+    "AutoSpec",
     "BaseKvStore",
     "BaseSpec",
     "CachePool",
@@ -186,6 +193,7 @@ __all__ = [
     "Shape",
     "TensorStoreKvStoreAdapterSpec",
     "TensorStoreSpec",
+    "TiffSpec",
     "Unit",
     "Zarr2Codec",
     "Zarr2Compressor",

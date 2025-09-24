@@ -6,6 +6,7 @@ from typing import Annotated, Any, TypeAlias
 from pydantic import BeforeValidator, Field
 
 from .array import ArraySpec
+from .auto import AutoSpec
 from .n5 import N5Codec, N5Spec
 from .neuroglancer_precomputed import (
     NeuroglancerPrecomputedCodec,
@@ -17,6 +18,7 @@ from .zarr3 import Zarr3Codec, Zarr3Spec
 
 __all__ = [
     "ArraySpec",
+    "AutoSpec",
     "N5Spec",
     "NeuroglancerPrecomputedSpec",
     "TiffSpec",
@@ -35,7 +37,13 @@ def _cast_to_spec_dict(obj: Any) -> Any:
 
 
 TensorStoreSpec: TypeAlias = Annotated[
-    ArraySpec | N5Spec | NeuroglancerPrecomputedSpec | TiffSpec | Zarr2Spec | Zarr3Spec,
+    ArraySpec
+    | AutoSpec
+    | N5Spec
+    | NeuroglancerPrecomputedSpec
+    | TiffSpec
+    | Zarr2Spec
+    | Zarr3Spec,
     Field(discriminator="driver"),
     BeforeValidator(_cast_to_spec_dict),
 ]
