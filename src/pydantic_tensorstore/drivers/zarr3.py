@@ -75,10 +75,10 @@ class Zarr3CodecBlosc(_Zarr3SingleCodec):
             default=None, description="Shuffle filter"
         )
         typesize: Annotated[int, Interval(ge=1, le=255)] | None = Field(
-            default=1, description="Specifies the stride in bytes for shuffling."
+            default=None, description="Specifies the stride in bytes for shuffling."
         )
         blocksize: Annotated[int, Ge(0)] | None = Field(
-            default=0,
+            default=None,
             description="Blosc block size in bytes. The default value of 0 causes the "
             "block size to be chosen automatically.",
         )
@@ -154,8 +154,8 @@ class Zarr3CodecShardingIndexed(_Zarr3SingleCodec):
                 "Shard index codec chain, used to encode/decode the shard index."
             ),
         )
-        index_location: Literal["start", "end"] = Field(
-            default="end", description="Location of the shard index."
+        index_location: Literal["start", "end"] | None = Field(
+            default=None, description="Location of the shard index."
         )
 
     name: Literal["sharding_indexed"] = "sharding_indexed"
@@ -288,7 +288,7 @@ class Zarr3Metadata(BaseModel):
     and improved codec pipelines.
     """
 
-    zarr_format: Literal[3] = 3
+    zarr_format: Literal[3] | None = None
     node_type: Literal["array"] = "array"
 
     shape: list[NonNegativeInt] | None = Field(

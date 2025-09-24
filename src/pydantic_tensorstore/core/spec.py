@@ -87,8 +87,8 @@ class TensorStoreKvStoreAdapterSpec(BaseSpec):
     )
     cache_pool: ContextResource = "cache_pool"
     data_copy_concurrency: ContextResource = "data_copy_concurrency"
-    recheck_cached_data: CacheRevalidationBound = Field(
-        default="open",
+    recheck_cached_data: CacheRevalidationBound | None = Field(
+        default=None,
         description=(
             "Time after which cached data is assumed to be fresh.  "
             "Cached data older than the specified time is revalidated prior to being "

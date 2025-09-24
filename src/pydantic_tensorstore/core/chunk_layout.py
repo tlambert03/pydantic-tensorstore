@@ -3,12 +3,11 @@
 Defines how data is partitioned into chunks for storage and I/O optimization.
 """
 
-from __future__ import annotations
-
 from typing import Annotated, ClassVar, Literal
 
 from annotated_types import Ge, Interval
 from pydantic import BaseModel, Field, NonNegativeFloat, NonNegativeInt, model_validator
+from typing_extensions import Self
 
 
 class ChunkLayoutGrid(BaseModel):
@@ -72,7 +71,7 @@ resultant chunk size will be [60, 90, 90] (assuming it is not otherwise constrai
     )
 
     @model_validator(mode="after")
-    def _validate_array_lengths_consistent(self) -> ChunkLayoutGrid:
+    def _validate_array_lengths_consistent(self) -> Self:
         """Validate that all array fields have consistent lengths."""
         arrays: list[int] = []
         array_names: list[str] = []
@@ -168,7 +167,7 @@ write/read-specific value that is also specified."""
     )
 
     @model_validator(mode="after")
-    def _post_validate(self) -> ChunkLayout:
+    def _post_validate(self) -> Self:
         """Validate that inner_order is a valid permutation."""
         # validate_inner_order and inner_order_soft_constraint
         for field in ["inner_order", "inner_order_soft_constraint"]:

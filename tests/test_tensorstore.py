@@ -296,5 +296,26 @@ def test_round_trip_validation(test_case: dict) -> None:
     # Validate that we can also validate the tensorstore spec object
     validate_spec(ts_spec)
 
+    our_spec.model_dump(mode="json", exclude_none=True)
+
+    ts_roundtrip = our_spec.to_tensorstore()
+
     # The round trip should work
-    assert our_spec.to_tensorstore() == ts_spec
+    assert ts_roundtrip == ts_spec
+
+
+def test_example() -> None:
+    # from the readme
+    import pydantic_tensorstore as pts
+    from pydantic_tensorstore.drivers import zarr
+
+    spec = pts.Zarr2Spec(
+        kvstore=pts.MemoryKvStore(),
+        metadata=zarr.ZarrMetadata(
+            chunks=[64, 64],
+            compressor=zarr.Zarr2CompressorBlosc(cname="lz4", clevel=5),
+            dtype="<f4",
+        ),
+    )
+
+    spec.to_tensorstore()

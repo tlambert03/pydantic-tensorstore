@@ -99,7 +99,7 @@ class ZarrMetadata(BaseModel):
     chunk shapes, and array metadata.
     """
 
-    zarr_format: Literal[2] = 2
+    zarr_format: Literal[2] | None = None
 
     shape: list[NonNegativeInt] | None = Field(
         default=None,
@@ -124,8 +124,8 @@ class ZarrMetadata(BaseModel):
         description="Fill value for uninitialized chunks",
     )
 
-    order: Literal["C", "F"] = Field(
-        default="C",
+    order: Literal["C", "F"] | None = Field(
+        default=None,
         description="Memory layout order (C=row-major, F=column-major)",
     )
 
@@ -139,8 +139,8 @@ class ZarrMetadata(BaseModel):
         description="Filter pipeline configuration (currently not supported)",
     )
 
-    dimension_separator: Literal[".", "/"] = Field(
-        default=".",
+    dimension_separator: Literal[".", "/"] | None = Field(
+        default=None,
         description="Separator for dimension names in chunk keys",
     )
 
@@ -186,8 +186,8 @@ class Zarr2Spec(ChunkedTensorStoreKvStoreAdapterSpec):
             "zarr implementations."
         ),
     )
-    key_encoding: Literal[".", "/"] = Field(
-        default=".",
+    key_encoding: Literal[".", "/"] | None = Field(
+        default=None,
         description=(
             "Specifies the encoding of chunk indices into key-value store keys. "
         ),
