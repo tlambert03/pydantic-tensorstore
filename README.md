@@ -10,14 +10,24 @@
 
 ## Motivation
 
-[TensorStore](https://github.com/google/tensorstore) is an exceptional C++ and Python library for reading and writing large multi-dimensional arrays. It supports numerous storage formats (Zarr, N5, Neuroglancer Precomputed) and backends (local files, cloud storage, memory), making it incredibly powerful for scientific computing and data analysis.
+[TensorStore](https://github.com/google/tensorstore) is an exceptional C++ and
+Python library for reading and writing large multi-dimensional arrays. It
+supports numerous storage formats (Zarr, N5, Neuroglancer Precomputed) and
+backends (local files, cloud storage, memory), making it incredibly powerful for
+scientific computing and data analysis.
 
-However, TensorStore has some pain points that this library addresses:
+However, TensorStore has some pain points that this library attempts to address:
 
-- **Poor type hinting**: TensorStore specifications are typically created as dictionaries with minimal type information, making it difficult to know what fields are available or required
-- **Complex documentation**: Creating proper TensorStore JSON spec objects often requires constantly referencing web documentation to understand the various options and their relationships
-- **Cryptic error messages**: When specifications are malformed, TensorStore errors can be difficult to interpret and debug
-- **No IDE support**: Without proper types, IDEs can't provide autocomplete, validation, or refactoring support
+- **Poor type hinting**: TensorStore specifications are typically created as
+  dictionaries with minimal type information, making it difficult to know what
+  fields are available or required
+- **Complex documentation**: Creating proper TensorStore JSON spec objects often
+  requires constantly referencing web documentation to understand the various
+  options and their relationships
+- **Cryptic error messages**: When specifications are malformed, TensorStore
+  errors can be difficult to interpret and debug
+- **No IDE support**: Without proper types, IDEs can't provide autocomplete,
+  validation, or refactoring support
 
 **pydantic-tensorstore** solves these issues by providing:
 
@@ -97,7 +107,8 @@ pip install git+https://github.com/tlambert03/pydantic-tensorstore
 
 ### Key Features
 
-- **Discriminated unions**: Automatically parse the correct spec type based on the `driver` field
+- **Discriminated unions**: Automatically parse the correct spec type based on
+  the `driver` field
 - **Validation**: Runtime validation with helpful error messages
 - **Serialization**: JSON serialization and deserialization
 - **IDE integration**: Full type hints and autocomplete support
