@@ -11,6 +11,7 @@ from .neuroglancer_precomputed import (
     NeuroglancerPrecomputedCodec,
     NeuroglancerPrecomputedSpec,
 )
+from .tiff import TiffSpec
 from .zarr import Zarr2Codec, Zarr2Spec
 from .zarr3 import Zarr3Codec, Zarr3Spec
 
@@ -18,6 +19,7 @@ __all__ = [
     "ArraySpec",
     "N5Spec",
     "NeuroglancerPrecomputedSpec",
+    "TiffSpec",
     "Zarr2Spec",
     "Zarr3Spec",
 ]
@@ -33,7 +35,7 @@ def _cast_to_spec_dict(obj: Any) -> Any:
 
 
 TensorStoreSpec: TypeAlias = Annotated[
-    ArraySpec | N5Spec | NeuroglancerPrecomputedSpec | Zarr2Spec | Zarr3Spec,
+    ArraySpec | N5Spec | NeuroglancerPrecomputedSpec | TiffSpec | Zarr2Spec | Zarr3Spec,
     Field(discriminator="driver"),
     BeforeValidator(_cast_to_spec_dict),
 ]
