@@ -26,15 +26,21 @@ VALID_NEUROGLANCER_DTYPES: set[DataType] = {
     DataType.FLOAT32,
 }
 
-NeuroglancerDataType: TypeAlias = Annotated[
-    DataType,
-    AfterValidator(
-        lambda v: v in VALID_NEUROGLANCER_DTYPES
-        or ValueError(
+
+def _validate_ng_dtype(v: DataType) -> DataType:
+    if v not in VALID_NEUROGLANCER_DTYPES:
+        raise ValueError(
             f"Invalid Neuroglancer data type: {v}. "
             "Must be one of {VALID_NEUROGLANCER_DTYPES}"
         )
-    ),
+    return v
+
+
+Zarr3DataType: TypeAlias = Annotated[DataType, AfterValidator(_validate_ng_dtype)]
+
+NeuroglancerDataType: TypeAlias = Annotated[
+    DataType,
+    AfterValidator(_validate_ng_dtype),
 ]
 
 

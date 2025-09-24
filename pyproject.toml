@@ -46,6 +46,7 @@ dev = [
     "rich",                     # https://github.com/Textualize/rich
     "ruff",
     "tensorstore>=0.1.69",
+    "tensorstore-stubs>=0.1.2",
 ]
 
 [tool.uv.sources]
@@ -144,4 +145,4 @@ ignore = [
 
 # https://github.com/crate-ci/typos/blob/master/docs/reference.md
 [tool.typos.default]
-extend-ignore-identifiers-re = []
+extend-ignore-identifiers-re = ["ser"]

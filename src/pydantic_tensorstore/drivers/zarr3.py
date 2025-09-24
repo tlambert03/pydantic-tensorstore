@@ -39,15 +39,16 @@ VALID_ZARR3_DTYPES: set[DataType] = {
     DataType.UINT64,
 }
 
-Zarr3DataType: TypeAlias = Annotated[
-    DataType,
-    AfterValidator(
-        lambda v: v in VALID_ZARR3_DTYPES
-        or ValueError(
+
+def _validate_zarr3_dtype(v: DataType) -> DataType:
+    if v not in VALID_ZARR3_DTYPES:
+        raise ValueError(
             f"Invalid Zarr3 data type: {v}. Must be one of {VALID_ZARR3_DTYPES}"
         )
-    ),
-]
+    return v
+
+
+Zarr3DataType: TypeAlias = Annotated[DataType, AfterValidator(_validate_zarr3_dtype)]
 
 
 class _Zarr3SingleCodec(BaseModel):

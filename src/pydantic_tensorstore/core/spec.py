@@ -3,7 +3,7 @@
 Defines the main TensorStoreSpec class and driver registry system.
 """
 
-from typing import Annotated, ClassVar, Literal, TypeAlias
+from typing import TYPE_CHECKING, Annotated, ClassVar, Literal, TypeAlias
 
 from annotated_types import Interval
 from pydantic import BaseModel, ConfigDict, Field
@@ -13,6 +13,9 @@ from pydantic_tensorstore.core.context import Context
 from pydantic_tensorstore.core.schema import Schema
 from pydantic_tensorstore.core.transform import IndexTransform
 from pydantic_tensorstore.kvstore import KvStore
+
+if TYPE_CHECKING:
+    import tensorstore
 
 
 class BaseSpec(BaseModel):
@@ -52,6 +55,19 @@ class BaseSpec(BaseModel):
         description="Schema constraints",
         alias="schema",
     )
+
+    def to_tensorstore(self) -> "tensorstore.Spec":
+        """Instantiate a TensorStore object from the specification."""
+        try:
+            import tensorstore
+        except ImportError as e:
+            raise ImportError(
+                "The tensorstore package is required to export to"
+                " TensorStore specifications."
+            ) from e
+
+        data = self.model_dump(mode="json", exclude_unset=True)
+        return tensorstore.Spec(data)
 
 
 CacheRevalidationBound: TypeAlias = bool | Literal["open"] | float

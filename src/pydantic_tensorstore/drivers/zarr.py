@@ -1,5 +1,6 @@
 """Zarr driver specification for Zarr v2 format."""
 
+import re
 from typing import Annotated, Any, Literal, TypeAlias
 
 from annotated_types import Interval
@@ -14,36 +15,81 @@ from pydantic import (
 )
 from typing_extensions import Self
 
-from pydantic_tensorstore._types import DataType
 from pydantic_tensorstore.core.codec import CodecBase
 from pydantic_tensorstore.core.spec import ChunkedTensorStoreKvStoreAdapterSpec
 
-VALID_ZARR2_DTYPES: set[DataType] = {
-    DataType.BOOL,
-    DataType.INT8,
-    DataType.INT16,
-    DataType.INT32,
-    DataType.INT64,
-    DataType.UINT8,
-    DataType.UINT16,
-    DataType.UINT32,
-    DataType.UINT64,
-    DataType.FLOAT16,
-    DataType.FLOAT32,
-    DataType.FLOAT64,
-    DataType.COMPLEX64,
-    DataType.COMPLEX128,
-}
+# Pattern for basic types: <|>|b|i|u|f|c|m|M|S|U|V followed by number
+BASIC_PATTERN = re.compile(r"^[<>|][biufcmMSUV]\d+$")
+# Pattern for datetime/timedelta with units: <|>|[mM]8[units]
+DATETIME_PATTERN = re.compile(r"^[<>|][mM]8\[[\w/]+\]$")
 
-Zarr2DataType: TypeAlias = Annotated[
-    DataType,
-    AfterValidator(
-        lambda v: v in VALID_ZARR2_DTYPES
-        or ValueError(
-            f"Invalid Zarr2 data type: {v}. Must be one of {VALID_ZARR2_DTYPES}"
-        )
-    ),
+
+def _validate_simple_zarr2_dtype(obj: str) -> str:
+    if BASIC_PATTERN.match(obj) or DATETIME_PATTERN.match(obj):
+        return obj
+    raise ValueError(
+        f"Invalid Zarr v2 data type: '{obj}'. Must follow NumPy typestr format "
+        f"(e.g., '<f8', '>i4', '|b1', '<M8[ns]')"
+    )
+
+
+def _validate_structured_zarr2_dtype(obj: list[Any]) -> list[Any]:
+    """Validate Zarr v2 data type encoding.
+
+    Supports both simple data types (NumPy typestr format) and structured data types.
+    """
+
+    # Structured data type validation
+    def _validate_field(field: Any) -> None:
+        if not isinstance(field, list) or len(field) < 2 or len(field) > 3:
+            raise ValueError(
+                f"Invalid field format: {field}. Must be [fieldname, datatype] "
+                f"or [fieldname, datatype, shape]"
+            )
+
+        fieldname, datatype = field[0], field[1]
+
+        if not isinstance(fieldname, str):
+            raise ValueError(f"Field name must be string, got {type(fieldname)}")
+
+        if isinstance(datatype, str):
+            # Simple datatype - validate recursively
+            _validate_simple_zarr2_dtype(datatype)
+        elif isinstance(datatype, list):
+            # Nested structured datatype
+            for nested_field in datatype:
+                _validate_field(nested_field)
+        else:
+            raise ValueError(
+                f"Invalid datatype in field '{fieldname}': {datatype}. "
+                f"Must be string or list"
+            )
+
+        # Validate optional shape
+        if len(field) == 3:
+            shape = field[2]
+            if not isinstance(shape, list) or not all(
+                isinstance(dim, int) and dim > 0 for dim in shape
+            ):
+                raise ValueError(
+                    f"Invalid shape in field '{fieldname}': {shape}. "
+                    f"Must be list of positive integers"
+                )
+
+    # Validate each field
+    for field in obj:
+        _validate_field(field)
+
+    return obj
+
+
+Zarr2SimpleDataType: TypeAlias = Annotated[
+    str, AfterValidator(_validate_simple_zarr2_dtype)
 ]
+Zarr2StructuredDataType: TypeAlias = Annotated[
+    list[Any], AfterValidator(_validate_structured_zarr2_dtype)
+]
+Zarr2DataType: TypeAlias = Zarr2SimpleDataType | Zarr2StructuredDataType
 
 
 class ZarrMetadata(BaseModel):

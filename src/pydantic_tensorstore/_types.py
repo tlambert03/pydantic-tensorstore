@@ -100,7 +100,12 @@ class DataType(str, Enum):
             return v
 
         return core_schema.no_info_before_validator_function(
-            function=_cast_to_dtype, schema=schema
+            function=_cast_to_dtype,
+            schema=schema,
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                function=str,
+                return_schema=core_schema.str_schema(),
+            ),
         )
 
 
