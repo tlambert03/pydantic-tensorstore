@@ -1,5 +1,8 @@
+from pathlib import Path
+
 import pytest
 
+import pydantic_tensorstore as pts
 from pydantic_tensorstore import validate_spec
 
 try:
@@ -36,7 +39,10 @@ ROUND_TRIP_TEST_CASES = [
         "id": "zarr_memory_basic",
         "spec": {
             "driver": "zarr",
+            "dtype": "uint16",
             "kvstore": {"driver": "memory"},
+            "create": True,
+            "metadata": {"shape": [256, 256]},
         },
     },
     {
@@ -72,10 +78,11 @@ ROUND_TRIP_TEST_CASES = [
         "id": "zarr_file_with_path",
         "spec": {
             "driver": "zarr",
-            "kvstore": {"driver": "file", "path": "/tmp/test_zarr"},
+            "kvstore": {"driver": "file", "path": "test_zarr"},
             "path": "dataset.zarr",
+            "schema": {"domain": {"shape": [64, 64, 64]}},
             "metadata": {
-                "chunks": [32, 32, 32],
+                "chunks": [8, 8, 8],
                 "dtype": ">i2",
                 "compressor": {"id": "zstd", "level": 3},
                 "dimension_separator": "/",
@@ -102,10 +109,7 @@ ROUND_TRIP_TEST_CASES = [
         "id": "zarr3_file",
         "spec": {
             "driver": "zarr3",
-            "kvstore": {
-                "driver": "file",
-                "path": "/tmp/zarr_test",
-            },
+            "kvstore": {"driver": "file", "path": "zarr_test"},
             "metadata": {
                 "shape": [3, 4, 5],
                 "data_type": "float32",
@@ -179,7 +183,7 @@ ROUND_TRIP_TEST_CASES = [
         "id": "n5_with_compression",
         "spec": {
             "driver": "n5",
-            "kvstore": {"driver": "file", "path": "/tmp/n5_test"},
+            "kvstore": {"driver": "file", "path": "n5_test"},
             "path": "dataset",
             "metadata": {
                 "dimensions": [2000, 2000, 200],
@@ -227,6 +231,8 @@ ROUND_TRIP_TEST_CASES = [
         "spec": {
             "driver": "neuroglancer_precomputed",
             "kvstore": {"driver": "memory"},
+            "dtype": "uint8",
+            "schema": {"domain": {"shape": [512, 512, 200, 3]}},
             "scale_metadata": {
                 "key": "2_2_2",
                 "size": (512, 512, 200),
@@ -263,6 +269,7 @@ ROUND_TRIP_TEST_CASES = [
         "spec": {
             "driver": "zarr",
             "kvstore": {"driver": "memory"},
+            "create": False,
             "context": {"cache_pool": {"total_bytes_limit": 10_000_000}},
         },
     },
@@ -283,9 +290,17 @@ ROUND_TRIP_TEST_CASES = [
 
 
 @pytest.mark.parametrize("test_case", ROUND_TRIP_TEST_CASES, ids=lambda x: x["id"])
-def test_round_trip_validation(test_case: dict) -> None:
+def test_round_trip_validation(
+    test_case: dict, tmp_path_factory: pytest.TempPathFactory
+) -> None:
     """Test round-trip validation: dict -> our_spec -> tensorstore -> our_spec."""
-    spec_dict = test_case["spec"]
+    spec_dict: dict = test_case["spec"]
+
+    # Use a temporary path for file-based kvstores
+    kvstore = spec_dict.get("kvstore", {})
+    if kvstore.get("driver") == "file":
+        tmp_path = tmp_path_factory.mktemp(kvstore["path"])
+        spec_dict["kvstore"]["path"] = str(tmp_path)
 
     # ensure tensorstore recognizes the spec
     ts_spec = ts.Spec(spec_dict)
@@ -302,6 +317,12 @@ def test_round_trip_validation(test_case: dict) -> None:
 
     # The round trip should work
     assert ts_roundtrip == ts_spec
+
+    # create an actual tensorstore object to ensure the spec is valid
+    if spec_dict.get("create") is not False:
+        ts.open(ts_roundtrip, create=True).result()
+        if isinstance(store := getattr(our_spec, "kvstore", None), pts.FileKvStore):
+            assert Path(store.path).exists()
 
 
 def test_example() -> None:

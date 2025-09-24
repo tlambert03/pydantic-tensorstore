@@ -155,6 +155,7 @@ class Zarr2Metadata(BaseModel):
                     f"chunks length ({chunks_len}) must match "
                     f"shape length ({shape_len})"
                 )
+
         return self
 
 
@@ -210,6 +211,28 @@ class Zarr2Spec(ChunkedTensorStoreKvStoreAdapterSpec):
                         f"field '{self.field}' not found in metadata.dtype fields "
                         f"{field_names}"
                     )
+
+        if self.create is True:
+            if self.dtype is None and (
+                self.metadata is None or self.metadata.dtype is None
+            ):
+                raise ValueError(
+                    "When `create` is True, either dtype or metadata.dtype "
+                    "must be specified."
+                )
+
+            # FIXME: overly simplistic ... but somewhat correct.
+            # we need to better determine how domains are specified.
+            # if (
+            #     self.schema_ is None
+            #     or self.schema_.domain is None
+            #     or self.schema_.domain.effective_rank is None
+            # ):
+            #     if self.metadata is None or self.metadata.shape is None:
+            #         raise ValueError(
+            #             "When `create` is True, either schema.domain or "
+            #             "metadata.shape must be specified."
+            #         )
         return self
 
 
