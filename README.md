@@ -93,7 +93,10 @@ validated_spec = validate_spec(raw_dict)
 install from github for now
 
 ```bash
-pip install git+https://github.com/tlambert03/pydantic-tensorstore
+pip install 'git+https://github.com/tlambert03/pydantic-tensorstore'
+
+# or, with a compatible version of tensorstore installed for .to_tensorstore() support
+pip install 'git+https://github.com/tlambert03/pydantic-tensorstore#egg=pydantic-tensorstore[tensorstore]'
 ```
 
 ## Features

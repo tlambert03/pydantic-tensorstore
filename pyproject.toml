@@ -25,14 +25,23 @@ classifiers = [
     "Typing :: Typed",
     "Topic :: Scientific/Engineering",
 ]
-dependencies = ["pydantic>=2.7.0", "typing-extensions>=4.6.0", "numpy>=1.20.0"]
+dependencies = [
+    "pydantic>=2.7.0",
+    "pydantic-core>=2.20.0; python_version>='3.13'",
+    "typing-extensions>=4.6.0",
+    "numpy>=1.20.0",
+    "numpy>=2.1; python_version>='3.13'",
+]
 
 [project.urls]
 homepage = "https://github.com/tlambert03/pydantic-tensorstore"
 repository = "https://github.com/tlambert03/pydantic-tensorstore"
 
 [project.optional-dependencies]
-tensorstore = ["tensorstore>=0.1.68"]
+tensorstore = [
+    "tensorstore>=0.1.68",
+    "tensorstore>=0.1.70; python_version>='3.13'",
+]
 
 [dependency-groups]
 test = [
