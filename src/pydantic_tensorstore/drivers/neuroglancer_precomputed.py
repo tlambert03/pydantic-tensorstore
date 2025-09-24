@@ -125,31 +125,6 @@ class NeuroglancerScaleMetadata(BaseModel):
     )
 
     @model_validator(mode="after")
-    def _validate_dimensions(self) -> Self:
-        """Validate that all dimension arrays have length 3."""
-        if len(self.size) != 3:
-            raise ValueError(f"size must have length 3, got {len(self.size)}")
-        if len(self.voxel_offset) != 3:
-            raise ValueError(
-                f"voxel_offset must have length 3, got {len(self.voxel_offset)}"
-            )
-        if len(self.chunk_size) != 3:
-            raise ValueError(
-                f"chunk_size must have length 3, got {len(self.chunk_size)}"
-            )
-        if len(self.resolution) != 3:
-            raise ValueError(
-                f"resolution must have length 3, got {len(self.resolution)}"
-            )
-        if self.compressed_segmentation_block_size is not None:
-            if len(self.compressed_segmentation_block_size) != 3:
-                raise ValueError(
-                    f"compressed_segmentation_block_size must have length 3, "
-                    f"got {len(self.compressed_segmentation_block_size)}"
-                )
-        return self
-
-    @model_validator(mode="after")
     def _validate_encoding_parameters(self) -> Self:
         """Validate encoding-specific parameters."""
         if self.encoding == "jpeg" and self.jpeg_quality is None:
