@@ -66,7 +66,7 @@ class BaseSpec(BaseModel):
                 " TensorStore specifications."
             ) from e
 
-        data = self.model_dump(mode="json", exclude_none=True)
+        data = self.model_dump(mode="json", exclude_none=True, by_alias=True)
         return tensorstore.Spec(data)
 
 
@@ -115,5 +115,7 @@ class ChunkedTensorStoreKvStoreAdapterSpec(TensorStoreKvStoreAdapterSpec):
         default="open",
         description="Time after which cached metadata is assumed to be fresh.",
     )
+
+    # tensorstore v0.1.68+
     fill_missing_data_reads: bool = True
     store_data_equal_to_fill_value: bool = False

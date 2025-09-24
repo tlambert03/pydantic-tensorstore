@@ -31,6 +31,7 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
         platform: [ubuntu-latest, macos-latest, windows-latest]
+        resolution: ["highest", "lowest-direct"]
 
     steps:
       - uses: actions/checkout@v5
@@ -43,6 +44,8 @@ jobs:
 
       - name: Install Dependencies
         run: uv sync --no-dev --group test
+        env:
+          UV_RESOLUTION: ${{ matrix.resolution }}
 
       - name: 🧪 Run Tests
         run: uv run --no-sync coverage run -p -m pytest -v

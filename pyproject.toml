@@ -25,27 +25,30 @@ classifiers = [
     "Typing :: Typed",
     "Topic :: Scientific/Engineering",
 ]
-dependencies = ["pydantic>=2.10.0", "typing-extensions>=4.8.0", "numpy>=1.20.0"]
+dependencies = ["pydantic>=2.7.0", "typing-extensions>=4.6.0", "numpy>=1.20.0"]
 
 [project.urls]
 homepage = "https://github.com/tlambert03/pydantic-tensorstore"
 repository = "https://github.com/tlambert03/pydantic-tensorstore"
 
 [project.optional-dependencies]
-tensorstore = ["tensorstore"]
+tensorstore = ["tensorstore>=0.1.68"]
 
 [dependency-groups]
-test = ["pytest>=7.0.0", "pytest-cov>=4.0.0"]
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pydantic-tensorstore[tensorstore]",
+]
 dev = [
     { include-group = "test" },
-    "ipython",
-    "mypy",
-    "pdbpp",                    # https://github.com/pdbpp/pdbpp
-    "pre-commit-uv",
+    "ipython>=8.37.0",
+    "mypy>=1.18.2",
+    "pdbpp>=0.11.7; sys_platform != 'win32'",
+    "pre-commit-uv>=4.1.5",
     "pyright>=1.1.405",
-    "rich",                     # https://github.com/Textualize/rich
-    "ruff",
-    "tensorstore>=0.1.69",
+    "rich>=14.1.0",
+    "ruff>=0.13.1",
     "tensorstore-stubs>=0.1.2",
 ]
 
