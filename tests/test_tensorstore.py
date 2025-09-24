@@ -26,7 +26,9 @@ def test_from_ts_mem_store() -> None:
     }
     ts_spec = ts.Spec(spec_dict)
     our_spec = validate_spec(ts_spec)
-    validate_spec(spec_dict)
+    # note... this will NOT be equal to our_spec because tensorstore
+    # normalizes the spec, moving metadata fields to the top level
+    assert validate_spec(spec_dict)
 
     assert our_spec.to_tensorstore() == ts_spec
 
