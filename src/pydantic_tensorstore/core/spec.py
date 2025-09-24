@@ -66,7 +66,7 @@ class BaseSpec(BaseModel):
                 " TensorStore specifications."
             ) from e
 
-        data = self.model_dump(mode="json", exclude_unset=True)
+        data = self.model_dump(mode="json", exclude_none=True)
         return tensorstore.Spec(data)
 
 
