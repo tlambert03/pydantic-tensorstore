@@ -81,6 +81,14 @@ spec = pts.Zarr2Spec(
 ts_spec = spec.to_tensorstore()  # requires tensorstore to be installed
 ```
 
+To cast any dict to a validated spec:
+
+```python
+from pydantic_tensorstore import validate_spec
+
+validated_spec = validate_spec(raw_dict)
+```
+
 ## Installation
 
 install from github for now
