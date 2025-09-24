@@ -1,5 +1,7 @@
 """Common types and enums used throughout TensorStore specifications."""
 
+import re
+from collections.abc import Sequence
 from contextlib import suppress
 from enum import Enum
 from typing import Annotated, Any, Literal, TypeAlias
@@ -10,6 +12,7 @@ from pydantic import (
     Field,
     GetCoreSchemaHandler,
     StringConstraints,
+    model_validator,
 )
 from pydantic_core import CoreSchema, core_schema
 
@@ -130,7 +133,17 @@ class Unit(BaseModel):
     """Physical unit specification."""
 
     multiplier: float = Field(default=1.0, description="Unit multiplier")
-    base_unit: str = Field(default="", description="Base unit (e.g., 'm', 's', 'nm')")
+    base_unit: str = Field(
+        default="",
+        description=(
+            "A base_unit, represented as a string. An empty string may be used to "
+            "indicate a dimensionless quantity. In general, TensorStore does not "
+            "interpret the base unit string; some drivers impose additional "
+            "constraints on the base unit, while other drivers may store the specified "
+            "unit directly. It is recommended to follow the udunits2 syntax unless "
+            "there is a specific need to deviate."
+        ),
+    )
 
     def __str__(self) -> str:
         """Return string representation of the unit."""
@@ -139,6 +152,41 @@ class Unit(BaseModel):
         if self.multiplier == 1.0:
             return self.base_unit
         return f"{self.multiplier}{self.base_unit}"
+
+    @model_validator(mode="before")
+    def _validate_unit(cls, v: Any) -> Any:
+        """Three JSON formats are supported.
+
+        - The canonical format, as a two-element [multiplier, base_unit] array. This
+          format is always used by TensorStore when returning the JSON representation of
+          a unit.
+
+        - A single string. If the string contains a leading number, it is parsed as the
+          multiplier and the remaining portion, after stripping leading and trailing
+          whitespace, is used as the base_unit. If there is no leading number, the
+          multiplier is 1 and the entire string, after stripping leading and trailing
+          whitespace, is used as the base_unit.
+
+        - A single number, to indicate a dimension-less unit with the specified
+          multiplier.
+        """
+        if isinstance(v, (float, int)):
+            return {"multiplier": float(v), "base_unit": ""}
+        if isinstance(v, str):
+            # regex to match a leading float (including scientific notation)
+
+            match = re.match(r"^[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?", v)
+            if match:
+                multiplier_str = match.group(0)
+                base_unit = v[match.end() :].strip()
+                return {"multiplier": float(multiplier_str), "base_unit": base_unit}
+            else:
+                return {"multiplier": 1.0, "base_unit": v.strip()}
+        elif isinstance(v, Sequence):
+            if len(v) != 2:
+                raise ValueError("Unit array must have exactly two elements")
+            return {"multiplier": float(v[0]), "base_unit": str(v[1])}
+        return v
 
 
 # String constraints for identifiers

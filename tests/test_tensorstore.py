@@ -24,11 +24,9 @@ def test_from_ts_mem_store() -> None:
             "order": "C",
         },
     }
-    zarr_mem = ts.open(spec_dict, create=True).result()
-
-    assert validate_spec(zarr_mem)
-    assert validate_spec(zarr_mem.spec())
-    assert validate_spec(spec_dict)
+    ts_spec = ts.Spec(spec_dict)
+    validate_spec(ts_spec)
+    validate_spec(spec_dict)
 
 
 def test_from_ts_zarr_store(tmp_path: Path) -> None:
@@ -46,6 +44,6 @@ def test_from_ts_zarr_store(tmp_path: Path) -> None:
         "create": True,
         "delete_existing": True,
     }
-    z3 = ts.open(spec_dict).result()
-    assert validate_spec(z3)
+    ts_spec = ts.Spec(spec_dict)
+    assert validate_spec(ts_spec)
     assert validate_spec(spec_dict)

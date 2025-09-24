@@ -3,11 +3,101 @@
 Defines how data is partitioned into chunks for storage and I/O optimization.
 """
 
-from typing import Any
+from __future__ import annotations
 
-from pydantic import BaseModel, Field, field_validator
+from typing import Annotated, ClassVar, Literal
 
-from pydantic_tensorstore._types import ChunkShape, Shape
+from annotated_types import Ge, Interval
+from pydantic import BaseModel, Field, NonNegativeFloat, NonNegativeInt, model_validator
+
+
+class ChunkLayoutGrid(BaseModel):
+    """Constraints on the write/read/codec chunk grids."""
+
+    shape: list[NonNegativeInt] | Literal[-1] | None = Field(
+        default=None,
+        description=(
+            """Hard constraints on the chunk size for each dimension.
+
+The length must equal the rank of the index space. Each element constrains the chunk
+size for the corresponding dimension, and must be a non-negative integer. The special
+value of 0 (or, equivalently, null)for a given dimension indicates no constraint. The
+special value of -1 for a given dimension indicates that the chunk size should equal the
+full extent of the domain, and is always treated as a soft constraint."""
+        ),
+    )
+    shape_soft_constraint: list[NonNegativeInt] | Literal[-1] | None = Field(
+        default=None,
+        description="Preferred chunk sizes for each dimension. If a non-zero, "
+        "non-null size for a given dimension is specified in both shape and "
+        "shape_soft_constraint, shape takes precedence.",
+    )
+    aspect_ratio: list[NonNegativeFloat] | None = Field(
+        default=None,
+        description=(
+            """Aspect ratio of the chunk shape.
+
+Specifies the relative chunk size along each dimension. The special value of 0 (or,
+equivalently, null) indicates no preference (which results in the default aspect ratio
+of 1 if not otherwise specified). The aspect ratio preference is only taken into account
+if the chunk size along a given dimension is not specified by shape or
+shape_soft_constraint, or otherwise constrained. For example, an aspect_ratio of [1,
+1.5, 1.5] indicates that the chunk size along dimensions 1 and 2 should be 1.5 times the
+chunk size along dimension 0. If the target number of elements is 486000, then the
+resultant chunk size will be [60, 90, 90] (assuming it is not otherwise constrained).
+"""
+        ),
+    )
+    aspect_ratio_soft_constraint: list[NonNegativeFloat] | None = Field(
+        default=None,
+        description=(
+            "Soft constraint on aspect ratio, lower precedence than aspect_ratio."
+        ),
+    )
+    elements: Annotated[int, Ge(1)] | None = Field(
+        default=None,
+        description=(
+            "Preferred number of elements per chunk. "
+            "Used in conjunction with aspect_ratio to determine the chunk size for "
+            "dimensions that are not otherwise constrained. The special value of null "
+            "indicates no preference, in which case a driver-specific default may "
+            "be used."
+        ),
+    )
+    elements_soft_constraint: Annotated[int, Ge(1)] | None = Field(
+        default=None,
+        description=(
+            "Preferred number of elements per chunk, lower precedence than elements."
+        ),
+    )
+
+    @model_validator(mode="after")
+    def _validate_array_lengths_consistent(self) -> ChunkLayoutGrid:
+        """Validate that all array fields have consistent lengths."""
+        arrays: list[int] = []
+        array_names: list[str] = []
+        field_names = [
+            "shape",
+            "shape_soft_constraint",
+            "aspect_ratio",
+            "aspect_ratio_soft_constraint",
+        ]
+        for field_name in field_names:
+            value = getattr(self, field_name)
+            if isinstance(value, list):
+                arrays.append(len(value))
+                array_names.append(field_name)
+
+        if len(set(arrays)) > 1:
+            array_info = ", ".join(
+                f"{name}={length}"
+                for name, length in zip(array_names, arrays, strict=True)
+            )
+            raise ValueError(
+                f"All array fields must have the same length (rank): {array_info}"
+            )
+
+        return self
 
 
 class ChunkLayout(BaseModel):
@@ -15,182 +105,88 @@ class ChunkLayout(BaseModel):
 
     Controls how array data is partitioned into chunks for storage,
     compression, and parallel I/O.
-
-    Attributes
-    ----------
-        grid_origin: Origin point for chunk grid alignment
-        inner_order: Dimension order for memory layout within chunks
-        read_chunk_shape: Shape for read operations
-        write_chunk_shape: Shape for write operations
-        chunk_shape: Shape for both read and write (convenience)
-        chunk_elements: Target number of elements per chunk
-        chunk_bytes: Target size in bytes per chunk
-        chunk_aspect_ratio: Preferred aspect ratio for chunks
-
-    Example:
-        >>> layout = ChunkLayout(
-        ...     chunk_shape=[64, 64, 64], inner_order=[0, 1, 2], grid_origin=[0, 0, 0]
-        ... )
     """
 
-    model_config = {"extra": "forbid", "validate_assignment": True}
+    model_config: ClassVar = {"extra": "forbid", "validate_assignment": True}
 
-    grid_origin: Shape | None = Field(
+    rank: Annotated[int, Interval(ge=0, le=32)] | None = Field(
+        default=None, description="Number of dimensions"
+    )
+
+    grid_origin: list[int | None] | None = Field(
         default=None,
-        description="Grid origin for chunk alignment",
+        description="Specifies hard constraints on the origin of the chunk grid.",
+    )
+
+    grid_origin_soft_constraint: list[int | None] | None = Field(
+        default=None,
+        description="Specifies preferred values for the origin of the chunk grid "
+        "rather than hard constraints.",
     )
 
     inner_order: list[int] | None = Field(
         default=None,
-        description="Dimension order for memory layout (C=row-major, F=col-major)",
+        description="Permutation specifying the element storage order within the "
+        "innermost chunks.",
     )
 
-    read_chunk_shape: ChunkShape | None = Field(
+    inner_order_soft_constraint: list[int] | None = Field(
         default=None,
-        description="Chunk shape for read operations",
+        description="Specifies a preferred element storage order within the innermost "
+        "chunks rather than a hard constraint.  `inner_order` takes precedence.",
     )
 
-    write_chunk_shape: ChunkShape | None = Field(
+    write_chunk: ChunkLayoutGrid | None = Field(
         default=None,
-        description="Chunk shape for write operations",
+        description="Constraints on the chunk grid over which writes may be "
+        "efficiently partitioned.",
     )
-
-    chunk_shape: ChunkShape | None = Field(
+    read_chunk: ChunkLayoutGrid | None = Field(
         default=None,
-        description="Chunk shape for both read and write operations",
+        description="Constraints on the chunk grid over which reads may be "
+        "efficiently partitioned.",
     )
-
-    chunk_elements: int | None = Field(
+    codec_chunk: ChunkLayoutGrid | None = Field(
         default=None,
-        description="Target number of elements per chunk",
-        gt=0,
+        description="Constraints on the chunk grid used by the codec, if applicable.",
     )
-
-    chunk_bytes: int | None = Field(
+    chunk: ChunkLayoutGrid | None = Field(
         default=None,
-        description="Target size in bytes per chunk",
-        gt=0,
+        description=(
+            """Combined constraints on write/read/codec chunks.
+
+If aspect_ratio is specified, it applies to write_chunk, read_chunk, and codec_chunk. If
+aspect_ratio_soft_constraint is specified, it also applies to write_chunk, read_chunk,
+and codec_chunk, but with lower precedence than any write/read/codec-specific value that
+is also specified.
+
+If shape or elements is specified, it applies to write_chunk and read_chunk (but not
+codec_chunk). If shape_soft_constraint or elements_soft_constraint is specified, it also
+applies to write_chunk and read_chunk, but with lower precedence than any
+write/read-specific value that is also specified."""
+        ),
     )
 
-    chunk_aspect_ratio: list[float | None] | None = Field(
-        default=None,
-        description="Preferred aspect ratio for automatic chunk sizing",
-    )
+    @model_validator(mode="after")
+    def _post_validate(self) -> ChunkLayout:
+        """Validate that inner_order is a valid permutation."""
+        # validate_inner_order and inner_order_soft_constraint
+        for field in ["inner_order", "inner_order_soft_constraint"]:
+            if (v := getattr(self, field)) is not None:
+                if self.rank is None:
+                    raise ValueError(f"rank must be specified when {field} is provided")
+                if sorted(v) != list(range(self.rank)):
+                    raise ValueError(
+                        f"{field} must be a permutation of "
+                        f"[0, 1, ..., {self.rank - 1}], got {v}"
+                    )
 
-    @field_validator("inner_order", mode="before")
-    @classmethod
-    def validate_inner_order(cls, v: Any) -> list[int] | None:
-        """Validate inner order is a valid permutation."""
-        if v is None:
-            return None
-
-        if not isinstance(v, list):
-            raise ValueError("inner_order must be a list")
-
-        if not all(isinstance(x, int) for x in v):
-            raise ValueError("inner_order must contain only integers")
-
-        # Check it's a valid permutation
-        sorted_order = sorted(v)
-        if sorted_order != list(range(len(v))):
-            raise ValueError(
-                f"inner_order must be a permutation of [0, 1, ..., {len(v) - 1}]"
-            )
-
-        return v
-
-    @field_validator(
-        "chunk_shape", "read_chunk_shape", "write_chunk_shape", mode="before"
-    )
-    @classmethod
-    def validate_chunk_shape(cls, v: Any) -> ChunkShape | None:
-        """Validate chunk shape values."""
-        if v is None:
-            return None
-
-        if not isinstance(v, list):
-            raise ValueError("Chunk shape must be a list")
-
-        for i, size in enumerate(v):
-            if size is not None and size <= 0:
-                raise ValueError(f"Chunk shape dimension {i} must be positive or None")
-
-        return v
-
-    @field_validator("chunk_aspect_ratio", mode="before")
-    @classmethod
-    def validate_chunk_aspect_ratio(cls, v: Any) -> list[float | None] | None:
-        """Validate chunk aspect ratio values."""
-        if v is None:
-            return None
-
-        if not isinstance(v, list):
-            raise ValueError("chunk_aspect_ratio must be a list")
-
-        for i, ratio in enumerate(v):
-            if ratio is not None and ratio <= 0:
+        # validate_grid_origin_length and grid_origin_soft_constraint_length
+        for field in ["grid_origin", "grid_origin_soft_constraint"]:
+            value = getattr(self, field)
+            if value is not None and self.rank is not None and len(value) != self.rank:
                 raise ValueError(
-                    f"Aspect ratio for dimension {i} must be positive or None"
+                    f"{field} length ({len(value)}) must equal rank ({self.rank})"
                 )
 
-        return v
-
-    def model_post_init(self, __context: Any) -> None:
-        """Post-initialization validation."""
-        # If chunk_shape is specified, set read_chunk_shape and write_chunk_shape
-        if self.chunk_shape is not None:
-            if self.read_chunk_shape is None:
-                self.read_chunk_shape = self.chunk_shape.copy()
-            if self.write_chunk_shape is None:
-                self.write_chunk_shape = self.chunk_shape.copy()
-
-        # Validate inner_order length against chunk shapes
-        if self.inner_order is not None:
-            rank = len(self.inner_order)
-
-            if self.read_chunk_shape is not None and len(self.read_chunk_shape) != rank:
-                raise ValueError(
-                    f"inner_order rank {rank} doesn't match "
-                    f"read_chunk_shape rank {len(self.read_chunk_shape)}"
-                )
-
-            if (
-                self.write_chunk_shape is not None
-                and len(self.write_chunk_shape) != rank
-            ):
-                raise ValueError(
-                    f"inner_order rank {rank} doesn't match "
-                    f"write_chunk_shape rank {len(self.write_chunk_shape)}"
-                )
-
-            if self.grid_origin is not None and len(self.grid_origin) != rank:
-                raise ValueError(
-                    f"inner_order rank {rank} doesn't match "
-                    f"grid_origin rank {len(self.grid_origin)}"
-                )
-
-    def get_effective_rank(self) -> int | None:
-        """Get the effective rank from various sources."""
-        if self.inner_order is not None:
-            return len(self.inner_order)
-        if self.read_chunk_shape is not None:
-            return len(self.read_chunk_shape)
-        if self.write_chunk_shape is not None:
-            return len(self.write_chunk_shape)
-        if self.grid_origin is not None:
-            return len(self.grid_origin)
-        if self.chunk_aspect_ratio is not None:
-            return len(self.chunk_aspect_ratio)
-        return None
-
-    def is_c_order(self) -> bool | None:
-        """Check if this represents C (row-major) order."""
-        if self.inner_order is None:
-            return None
-        return self.inner_order == list(range(len(self.inner_order)))
-
-    def is_f_order(self) -> bool | None:
-        """Check if this represents Fortran (column-major) order."""
-        if self.inner_order is None:
-            return None
-        return self.inner_order == list(reversed(range(len(self.inner_order))))
+        return self
