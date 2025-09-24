@@ -33,7 +33,7 @@ However, TensorStore has some pain points that this library addresses:
 Instead of wrestling with raw dictionaries:
 
 ```python
-# ❌ Raw TensorStore (no types, no validation, no IDE support)
+# Raw TensorStore (no types, no validation, no IDE support)
 import tensorstore as ts
 
 spec = {
@@ -54,7 +54,7 @@ spec = {
 Use type-safe, validated specifications:
 
 ```python
-# ✅ pydantic-tensorstore (full types, validation, IDE support)
+#  pydantic-tensorstore (full types, validation, IDE support)
 import pydantic_tensorstore as pts
 from pydantic_tensorstore.drivers import zarr
 
@@ -81,7 +81,7 @@ pip install git+https://github.com/tlambert03/pydantic-tensorstore
 
 ## Features
 
-### 🏗️ Supported Drivers
+### Supported Drivers
 
 - **Array**: In-memory arrays with NumPy integration
 - **Zarr v2**: Full support for Zarr v2 format with all compression options
@@ -89,13 +89,13 @@ pip install git+https://github.com/tlambert03/pydantic-tensorstore
 - **N5**: N5 format support with compression and chunking
 - **Neuroglancer Precomputed**: For neuroimaging workflows
 
-### 🗄️ Supported Storage Backends
+### Supported Storage Backends
 
 - **File**: Local filesystem storage
 - **Memory**: In-memory storage for testing and caching
 - **S3**: AWS S3 and S3-compatible storage
 
-### ✨ Key Features
+### Key Features
 
 - **Discriminated unions**: Automatically parse the correct spec type based on the `driver` field
 - **Validation**: Runtime validation with helpful error messages
