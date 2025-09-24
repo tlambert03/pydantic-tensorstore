@@ -103,11 +103,18 @@ pip install 'git+https://github.com/tlambert03/pydantic-tensorstore#egg=pydantic
 
 ### Supported Drivers
 
-- **Array**: In-memory arrays with NumPy integration
+#### Chunked Storage Drivers
+
 - **Zarr v2**: Full support for Zarr v2 format with all compression options
 - **Zarr v3**: Support for the new Zarr v3 specification
 - **N5**: N5 format support with compression and chunking
 - **Neuroglancer Precomputed**: For neuroimaging workflows
+
+#### Other Drivers
+
+- **Array**: In-memory arrays with NumPy integration
+- **TIFF**: Read TIFF files (8-bit only)
+- **Auto**: Automatic driver selection based on path
 
 ### Supported Storage Backends
 
