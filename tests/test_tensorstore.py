@@ -263,15 +263,44 @@ ROUND_TRIP_TEST_CASES = [
             },
         },
     },
+    # TIFF examples (validation-only, no actual creation)
+    {
+        "id": "tiff_basic",
+        "spec": {
+            "driver": "tiff",
+            "kvstore": {"driver": "memory"},
+            "path": "image.tiff",
+        },
+        "skip_creation": True,
+    },
+    {
+        "id": "tiff_with_dtype",
+        "spec": {
+            "driver": "tiff",
+            "kvstore": {"driver": "memory"},
+            "dtype": "uint8",
+        },
+        "skip_creation": True,
+    },
+    {
+        "id": "tiff_multipage",
+        "spec": {
+            "driver": "tiff",
+            "kvstore": {"driver": "memory"},
+            "path": "multipage.tiff",
+            "page": 2,
+        },
+        "skip_creation": True,
+    },
     # With various contexts and options
     {
         "id": "with_cache_pool",
         "spec": {
             "driver": "zarr",
             "kvstore": {"driver": "memory"},
-            "create": False,
             "context": {"cache_pool": {"total_bytes_limit": 10_000_000}},
         },
+        "skip_creation": True,
     },
     {
         "id": "with_creation_flags",
@@ -319,7 +348,9 @@ def test_round_trip_validation(
     assert ts_roundtrip == ts_spec
 
     # create an actual tensorstore object to ensure the spec is valid
-    if spec_dict.get("create") is not False:
+    if spec_dict.get("create") is not False and not test_case.get(
+        "skip_creation", False
+    ):
         ts.open(ts_roundtrip, create=True).result()
         if isinstance(store := getattr(our_spec, "kvstore", None), pts.FileKvStore):
             assert Path(store.path).exists()
