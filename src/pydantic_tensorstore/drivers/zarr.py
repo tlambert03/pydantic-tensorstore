@@ -1,40 +1,79 @@
 """Zarr driver specification for Zarr v2 format."""
 
-from typing import Annotated, Any, ClassVar, Literal, TypeAlias
+from typing import Annotated, Any, Literal, TypeAlias
 
 from annotated_types import Interval
-from pydantic import BaseModel, Field, NonNegativeInt, field_validator
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    BeforeValidator,
+    Field,
+    NonNegativeInt,
+    PositiveInt,
+    model_validator,
+)
+from typing_extensions import Self
 
-from pydantic_tensorstore._types import JsonObject
+from pydantic_tensorstore._types import DataType
 from pydantic_tensorstore.core.codec import CodecBase
 from pydantic_tensorstore.core.spec import ChunkedTensorStoreKvStoreAdapterSpec
 
+VALID_ZARR2_DTYPES: set[DataType] = {
+    DataType.BOOL,
+    DataType.INT8,
+    DataType.INT16,
+    DataType.INT32,
+    DataType.INT64,
+    DataType.UINT8,
+    DataType.UINT16,
+    DataType.UINT32,
+    DataType.UINT64,
+    DataType.FLOAT16,
+    DataType.FLOAT32,
+    DataType.FLOAT64,
+    DataType.COMPLEX64,
+    DataType.COMPLEX128,
+}
+
+Zarr2DataType: TypeAlias = Annotated[
+    DataType,
+    AfterValidator(
+        lambda v: v in VALID_ZARR2_DTYPES
+        or ValueError(
+            f"Invalid Zarr2 data type: {v}. Must be one of {VALID_ZARR2_DTYPES}"
+        )
+    ),
+]
+
 
 class ZarrMetadata(BaseModel):
-    """Zarr metadata specification.
+    """Zarr v2 metadata specification.
 
     Controls Zarr-specific format options like compression,
     chunk shapes, and array metadata.
     """
 
-    model_config: ClassVar = {"extra": "allow"}
+    zarr_format: Literal[2] = 2
 
-    chunks: list[int] | None = Field(
+    shape: list[NonNegativeInt] | None = Field(
         default=None,
-        description="Chunk shape for storage",
+        description=(
+            "Array shape. Required when creating a new array "
+            "if the `Schema.domain` is not otherwise specified."
+        ),
     )
 
-    compressor: JsonObject | None = Field(
+    chunks: list[PositiveInt] | None = Field(
         default=None,
-        description="Compression configuration",
+        description="Chunk dimensions. Must have the same length as shape.",
     )
 
-    filters: list[JsonObject] | None = Field(
+    dtype: Zarr2DataType | None = Field(
         default=None,
-        description="Filter pipeline configuration",
+        description="Data type specification",
     )
 
-    fill_value: int | float | str | bool | None = Field(
+    fill_value: Any = Field(
         default=None,
         description="Fill value for uninitialized chunks",
     )
@@ -44,33 +83,33 @@ class ZarrMetadata(BaseModel):
         description="Memory layout order (C=row-major, F=column-major)",
     )
 
-    zarr_format: Literal[2] = Field(
-        default=2,
-        description="Zarr format version",
+    compressor: "Zarr2Compressor | None" = Field(
+        default=None,
+        description="Compression configuration",
     )
 
-    dimension_separator: str = Field(
+    filters: Literal[None] = Field(
+        default=None,
+        description="Filter pipeline configuration (currently not supported)",
+    )
+
+    dimension_separator: Literal[".", "/"] = Field(
         default=".",
         description="Separator for dimension names in chunk keys",
     )
 
-    @field_validator("chunks", mode="before")
-    @classmethod
-    def validate_chunks(cls, v: Any) -> list[int] | None:
-        """Validate chunk specification."""
-        if v is None:
-            return None
-
-        if not isinstance(v, list):
-            raise ValueError("chunks must be a list")
-
-        for i, chunk_size in enumerate(v):
-            if not isinstance(chunk_size, int) or chunk_size <= 0:
+    @model_validator(mode="after")
+    def _validate_chunk_shape_length(self) -> Self:
+        """Validate that chunks length matches array shape length."""
+        if self.shape is not None and self.chunks is not None:
+            shape_len = len(self.shape)
+            chunks_len = len(self.chunks)
+            if shape_len != chunks_len:
                 raise ValueError(
-                    f"Chunk size at dimension {i} must be a positive integer"
+                    f"chunks length ({chunks_len}) must match "
+                    f"shape length ({shape_len})"
                 )
-
-        return v
+        return self
 
 
 class Zarr2Spec(ChunkedTensorStoreKvStoreAdapterSpec):
@@ -85,21 +124,20 @@ class Zarr2Spec(ChunkedTensorStoreKvStoreAdapterSpec):
 
 
 class _Zarr2Compressor(BaseModel):
-    """The id member identifies the compressor.
+    """Base class for Zarr v2 compressor specifications.
 
+    The id member identifies the compressor.
     The remaining members are specific to the compressor.
     """
-
-    # id: str
 
 
 class Zarr2CompressorBlosc(_Zarr2Compressor):
     """Blosc compressor specification."""
 
     id: Literal["blosc"] = "blosc"
-    cname: Literal["blosclz", "lz4", "lz4hc", "snappy", "zlib", "zstd"] | None = Field(
-        default=None,
-        description="Specifies the compression method used by Blosc.",
+    cname: Literal["blosclz", "lz4", "lz4hc", "snappy", "zlib", "zstd"] = Field(
+        default="lz4",
+        description="Compression algorithm",
     )
     clevel: Annotated[int, Field(ge=0, le=9)] = Field(
         default=5,
@@ -156,15 +194,25 @@ class Zarr2CompressorZstd(_Zarr2Compressor):
     )
 
 
+def _str_to_compressor(v: str) -> dict[str, Any]:
+    """A plain string is equivalent to an object with the string as its id.
+
+    For example, "blosc" is equivalent to {"id": "blosc"}.
+    """
+    if isinstance(v, str):
+        return {"id": v}
+    return v
+
+
 Zarr2Compressor: TypeAlias = Annotated[
-    (
-        Zarr2CompressorBlosc
-        | Zarr2CompressorBz2
-        | Zarr2CompressorZlib
-        | Zarr2CompressorZstd
-    ),
+    Zarr2CompressorBlosc
+    | Zarr2CompressorBz2
+    | Zarr2CompressorZlib
+    | Zarr2CompressorZstd,
     Field(discriminator="id"),
+    BeforeValidator(_str_to_compressor),
 ]
+ZarrMetadata.model_rebuild()
 
 
 class Zarr2Codec(CodecBase):
