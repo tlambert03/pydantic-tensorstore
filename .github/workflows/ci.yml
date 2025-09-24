@@ -49,6 +49,8 @@ jobs:
 
       - name: 🧪 Run Tests
         run: uv run --no-sync coverage run -p -m pytest -v
+        env:
+          PYTEST_ADDOPTS: ${{ matrix.resolution == 'lowest-direct' && '-W ignore' || '' }}
 
       # If something goes wrong with --pre tests, we can open an issue in the repo
       - name: 📝 Report --pre Failures

@@ -3,7 +3,7 @@
 Defines the main TensorStoreSpec class and driver registry system.
 """
 
-from typing import TYPE_CHECKING, Annotated, ClassVar, Literal, TypeAlias
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, TypeAlias
 
 from annotated_types import Interval
 from pydantic import BaseModel, ConfigDict, Field
@@ -66,8 +66,23 @@ class BaseSpec(BaseModel):
                 " TensorStore specifications."
             ) from e
 
-        data = self.model_dump(mode="json", exclude_none=True, by_alias=True)
+        data = self.model_dump(mode="json")
         return tensorstore.Spec(data)
+
+    if not TYPE_CHECKING:
+        # We almost always want by_alias and exclude_none to be true.
+        def model_dump(self, *args: Any, **kwargs: Any) -> dict:
+            """Workaround for pydantic v2 bug with ClassVar and mypy."""
+            kwargs.setdefault("by_alias", True)
+            kwargs.setdefault("exclude_none", True)
+            data = super().model_dump(*args, **kwargs)
+            return data
+
+        def model_dump_json(self, *args: Any, **kwargs: Any) -> dict:
+            """Workaround for pydantic v2 bug with ClassVar and mypy."""
+            kwargs.setdefault("by_alias", True)
+            kwargs.setdefault("exclude_none", True)
+            return super().model_dump_json(*args, **kwargs)
 
 
 CacheRevalidationBound: TypeAlias = bool | Literal["open"] | float

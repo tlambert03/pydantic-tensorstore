@@ -104,8 +104,6 @@ testpaths = ["tests"]
 filterwarnings = [
     "error",
     "ignore:Field name \"schema\" in \"BaseDriverSpec\" shadows an attribute",
-    "ignore:ast.Str is deprecated:DeprecationWarning",
-    "ignore:ast.NameConstant is deprecated:DeprecationWarning",
 ]
 
 # https://mypy.readthedocs.io/en/stable/config_file.html
