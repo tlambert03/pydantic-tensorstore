@@ -66,13 +66,12 @@ Use type-safe, validated specifications with IDE autocompletion:
 ```python
 #  pydantic-tensorstore (full types, validation, IDE support)
 import pydantic_tensorstore as pts
-from pydantic_tensorstore.drivers import zarr
 
 spec = pts.Zarr2Spec(
     kvstore=pts.MemoryKvStore(),
-    metadata=zarr.ZarrMetadata(
+    metadata=pts.Zarr2Metadata(
         chunks=[64, 64],
-        compressor=zarr.Zarr2CompressorBlosc(cname="lz4", clevel=5),
+        compressor=pts.Zarr2CompressorBlosc(cname="lz4", clevel=5),
         dtype="<f4",
     ),
 )

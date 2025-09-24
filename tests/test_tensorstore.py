@@ -307,13 +307,12 @@ def test_round_trip_validation(test_case: dict) -> None:
 def test_example() -> None:
     # from the readme
     import pydantic_tensorstore as pts
-    from pydantic_tensorstore.drivers import zarr
 
     spec = pts.Zarr2Spec(
         kvstore=pts.MemoryKvStore(),
-        metadata=zarr.ZarrMetadata(
+        metadata=pts.Zarr2Metadata(
             chunks=[64, 64],
-            compressor=zarr.Zarr2CompressorBlosc(cname="lz4", clevel=5),
+            compressor=pts.Zarr2CompressorBlosc(cname="lz4", clevel=5),
             dtype="<f4",
         ),
     )

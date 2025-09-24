@@ -15,10 +15,10 @@ from pydantic import (
 )
 from typing_extensions import Self
 
+from pydantic_tensorstore._core.codec import CodecBase
+from pydantic_tensorstore._core.spec import ChunkedTensorStoreKvStoreAdapterSpec
+from pydantic_tensorstore._core.transform import _validate_labels
 from pydantic_tensorstore._types import DataType
-from pydantic_tensorstore.core.codec import CodecBase
-from pydantic_tensorstore.core.spec import ChunkedTensorStoreKvStoreAdapterSpec
-from pydantic_tensorstore.core.transform import _validate_labels
 
 VALID_ZARR3_DTYPES: set[DataType] = {
     DataType.BFLOAT16,

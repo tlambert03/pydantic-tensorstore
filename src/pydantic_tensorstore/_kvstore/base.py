@@ -20,7 +20,7 @@ class BaseKvStore(BaseModel):
 
     Example:
         >>> # Use concrete implementations like MemoryKvStoreSpec
-        >>> from pydantic_tensorstore.kvstore import MemoryKvStoreSpec
+        >>> from pydantic_tensorstore._kvstore import MemoryKvStoreSpec
         >>> kvstore = MemoryKvStoreSpec(driver="memory")
     """
 

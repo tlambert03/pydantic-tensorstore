@@ -15,8 +15,8 @@ from pydantic import (
 )
 from typing_extensions import Self
 
-from pydantic_tensorstore.core.codec import CodecBase
-from pydantic_tensorstore.core.spec import ChunkedTensorStoreKvStoreAdapterSpec
+from pydantic_tensorstore._core.codec import CodecBase
+from pydantic_tensorstore._core.spec import ChunkedTensorStoreKvStoreAdapterSpec
 
 # Pattern for basic types: <|>|b|i|u|f|c|m|M|S|U|V followed by number
 BASIC_PATTERN = re.compile(r"^[<>|][biufcmMSUV]\d+$")
@@ -92,7 +92,7 @@ Zarr2StructuredDataType: TypeAlias = Annotated[
 Zarr2DataType: TypeAlias = Zarr2SimpleDataType | Zarr2StructuredDataType
 
 
-class ZarrMetadata(BaseModel):
+class Zarr2Metadata(BaseModel):
     """Zarr v2 metadata specification.
 
     Controls Zarr-specific format options like compression,
@@ -172,7 +172,7 @@ class Zarr2Spec(ChunkedTensorStoreKvStoreAdapterSpec):
         ),
     )
 
-    metadata: ZarrMetadata | None = Field(
+    metadata: Zarr2Metadata | None = Field(
         default=None,
         description="Zarr metadata specification",
     )
@@ -302,7 +302,7 @@ Zarr2Compressor: TypeAlias = Annotated[
     Field(discriminator="id"),
     BeforeValidator(_str_to_compressor),
 ]
-ZarrMetadata.model_rebuild()
+Zarr2Metadata.model_rebuild()
 
 
 class Zarr2Codec(CodecBase):

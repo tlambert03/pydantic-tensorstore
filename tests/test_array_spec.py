@@ -6,8 +6,7 @@ import numpy as np
 import pytest
 from pydantic import ValidationError
 
-from pydantic_tensorstore._types import DataType
-from pydantic_tensorstore.drivers.array import ArraySpec
+from pydantic_tensorstore import ArraySpec, DataType
 
 
 def test_array_spec_basic() -> None:

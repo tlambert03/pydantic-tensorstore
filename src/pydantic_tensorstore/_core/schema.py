@@ -9,12 +9,12 @@ from typing import TYPE_CHECKING, Annotated, Any, ClassVar
 from annotated_types import Interval
 from pydantic import BaseModel, Field
 
+from pydantic_tensorstore._core.chunk_layout import ChunkLayout
+from pydantic_tensorstore._core.transform import IndexDomain
 from pydantic_tensorstore._types import DataType, Unit
-from pydantic_tensorstore.core.chunk_layout import ChunkLayout
-from pydantic_tensorstore.core.transform import IndexDomain
 
 if TYPE_CHECKING:
-    from pydantic_tensorstore.drivers import Codec
+    from pydantic_tensorstore._drivers import Codec
 
 
 class Schema(BaseModel):

@@ -4,8 +4,8 @@ from typing import ClassVar, Literal
 
 from pydantic import Field
 
+from pydantic_tensorstore._kvstore.base import BaseKvStore
 from pydantic_tensorstore._types import ContextResource
-from pydantic_tensorstore.kvstore.base import BaseKvStore
 
 
 class FileKvStore(BaseKvStore):

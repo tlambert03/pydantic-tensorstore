@@ -8,11 +8,11 @@ from typing import TYPE_CHECKING, Annotated, ClassVar, Literal, TypeAlias
 from annotated_types import Interval
 from pydantic import BaseModel, ConfigDict, Field
 
+from pydantic_tensorstore._core.context import Context
+from pydantic_tensorstore._core.schema import Schema
+from pydantic_tensorstore._core.transform import IndexTransform
+from pydantic_tensorstore._kvstore import KvStore
 from pydantic_tensorstore._types import ContextResource, DataType
-from pydantic_tensorstore.core.context import Context
-from pydantic_tensorstore.core.schema import Schema
-from pydantic_tensorstore.core.transform import IndexTransform
-from pydantic_tensorstore.kvstore import KvStore
 
 if TYPE_CHECKING:
     import tensorstore

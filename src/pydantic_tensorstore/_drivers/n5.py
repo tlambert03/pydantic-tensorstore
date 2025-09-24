@@ -11,9 +11,9 @@ from pydantic import (
     PositiveInt,
 )
 
+from pydantic_tensorstore._core.codec import CodecBase
+from pydantic_tensorstore._core.spec import ChunkedTensorStoreKvStoreAdapterSpec
 from pydantic_tensorstore._types import DataType
-from pydantic_tensorstore.core.codec import CodecBase
-from pydantic_tensorstore.core.spec import ChunkedTensorStoreKvStoreAdapterSpec
 
 VALID_N5_DTYPES: set[DataType] = {
     DataType.FLOAT32,

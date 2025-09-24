@@ -5,8 +5,8 @@ from typing import Any, ClassVar, Literal
 import numpy as np
 from pydantic import Field, field_validator
 
+from pydantic_tensorstore._core.spec import BaseSpec
 from pydantic_tensorstore._types import DataType, JsonObject
-from pydantic_tensorstore.core.spec import BaseSpec
 
 
 class ArraySpec(BaseSpec):
