@@ -24,8 +24,6 @@ However, TensorStore has some pain points that this library attempts to address:
 - **Complex documentation**: Creating proper TensorStore JSON spec objects often
   requires constantly referencing web documentation to understand the various
   options and their relationships
-- **Cryptic error messages**: When specifications are malformed, TensorStore
-  errors can be difficult to interpret and debug
 - **No IDE support**: Without proper types, IDEs can't provide autocomplete,
   validation, or refactoring support
 
