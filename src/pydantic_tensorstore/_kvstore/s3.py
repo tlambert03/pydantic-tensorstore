@@ -6,7 +6,7 @@ from typing import Literal
 
 from pydantic import Field
 
-from pydantic_tensorstore._core.base import since
+from pydantic_tensorstore._core.base import since, since_inline
 from pydantic_tensorstore._kvstore.base import BaseKvStore
 from pydantic_tensorstore._types import ContextResource
 
@@ -27,7 +27,9 @@ class S3KvStore(BaseKvStore):
     use_conditional_write: bool | None = Field(
         default=None, json_schema_extra=since("0.1.74")
     )
-    aws_credentials: ContextResource | None = None
+    aws_credentials: ContextResource | None = Field(
+        default=None, json_schema_extra=since_inline("0.1.72")
+    )
     s3_request_concurrency: ContextResource | None = None
     s3_request_retries: ContextResource | None = None
     experimental_s3_rate_limiter: ContextResource | None = None

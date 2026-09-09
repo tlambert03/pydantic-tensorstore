@@ -203,6 +203,11 @@ class Zarr3Metadata(TensorStoreModel):
     dimension_names: list[str | None] | None = Field(
         default=None, description="Names for each dimension"
     )
+    storage_transformers: list[Any] | None = Field(
+        default=None,
+        description="Storage transformers. tensorstore only supports the empty "
+        "list, which is what zarr-python writes.",
+    )
 
     _v: Any = field_validator("dimension_names", mode="after")(
         classmethod(_validate_labels)

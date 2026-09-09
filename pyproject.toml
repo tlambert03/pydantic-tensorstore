@@ -132,10 +132,7 @@ skip-magic-trailing-comma = false # default is false
 minversion = "7.0"
 addopts = ["--color=yes"]
 testpaths = ["tests"]
-filterwarnings = [
-    "error",
-    "ignore:Field name \"schema\" in \"BaseDriverSpec\" shadows an attribute",
-]
+filterwarnings = ["error"]
 
 # https://mypy.readthedocs.io/en/stable/config_file.html
 [tool.mypy]

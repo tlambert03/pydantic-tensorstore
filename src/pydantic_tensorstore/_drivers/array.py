@@ -35,6 +35,18 @@ class ArrayValidator:
         )
 
 
+def _round_trips(original: np.ndarray, cast: np.ndarray) -> bool:
+    """Whether casting back reproduces the original (treating NaN as equal)."""
+    try:
+        back = cast.astype(original.dtype)
+    except (TypeError, ValueError):  # pragma: no cover - non-numeric round trip
+        return True
+    same = back == original
+    if np.issubdtype(original.dtype, np.floating):
+        same = same | (np.isnan(back) & np.isnan(original))
+    return bool(np.all(same))
+
+
 class ArraySpec(BaseSpec):
     """Array driver specification for in-memory arrays."""
 
@@ -60,7 +72,13 @@ class ArraySpec(BaseSpec):
         except TypeError:
             np_dtype = None
         if np_dtype is not None and self.array.dtype != np_dtype:
-            object.__setattr__(self, "array", self.array.astype(np_dtype))
+            cast = self.array.astype(np_dtype)
+            if not _round_trips(self.array, cast):
+                raise ValueError(
+                    f"array values cannot be represented in dtype '{self.dtype}' "
+                    f"without loss; cast the array explicitly if that is intended"
+                )
+            object.__setattr__(self, "array", cast)
         if self.rank is not None and self.rank != self.array.ndim:
             raise ValueError(
                 f"Specified rank ({self.rank}) does not match array dimensions "

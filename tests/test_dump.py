@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import pytest
+from pydantic import ValidationError
+
 import pydantic_tensorstore as pts
 
 
@@ -58,3 +61,29 @@ def test_validate_kvstore_url_passthrough() -> None:
     assert pts.validate_kvstore("memory://a.zip|zip:") == "memory://a.zip|zip:"
     spec = pts.validate_spec({"driver": "zarr3", "kvstore": "memory://a.zip|zip:"})
     assert spec.model_dump()["kvstore"] == "memory://a.zip|zip:"
+
+
+def test_repr_shows_only_what_was_set() -> None:
+    assert repr(pts.Zarr3Spec(kvstore="memory://")) == (
+        "Zarr3Spec(kvstore=MemoryKvStore(driver='memory'), driver='zarr3')"
+    )
+    # an explicit None is meaningful, so it stays visible
+    spec = pts.Zarr2Spec(kvstore="memory://", metadata={"compressor": None})
+    assert "compressor=None" in repr(spec)
+
+
+def test_validation_errors_name_the_type() -> None:
+    with pytest.raises(ValidationError, match="validation error for TensorStoreSpec"):
+        pts.validate_spec({"driver": "zarr3", "kvstore": "memory://", "nope": 1})
+    with pytest.raises(ValidationError, match="validation errors for KvStore"):
+        pts.validate_kvstore({"driver": "nope"})
+
+
+def test_array_rejects_lossy_dtype() -> None:
+    with pytest.raises(ValidationError, match="cannot be represented"):
+        pts.validate_spec({"driver": "array", "array": [1.7], "dtype": "int32"})
+    # exact values and non-finite floats are fine
+    assert pts.validate_spec(
+        {"driver": "array", "array": [1.0], "dtype": "int32"}
+    ).model_dump()["array"] == [1]
+    assert pts.ArraySpec(array=[float("nan")], dtype="float32").model_dump_json()

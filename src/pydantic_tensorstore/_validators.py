@@ -5,7 +5,7 @@ from __future__ import annotations
 from functools import cache
 from typing import TYPE_CHECKING, Any, TypeVar
 
-from pydantic import TypeAdapter
+from pydantic import ConfigDict, TypeAdapter
 
 if TYPE_CHECKING:
     from pydantic_tensorstore import KvStore, TensorStoreSpec
@@ -16,14 +16,14 @@ T = TypeVar("T")
 def _spec_adapter() -> TypeAdapter[TensorStoreSpec]:
     from pydantic_tensorstore import TensorStoreSpec
 
-    return TypeAdapter(TensorStoreSpec)
+    return TypeAdapter(TensorStoreSpec, config=ConfigDict(title="TensorStoreSpec"))
 
 
 @cache
 def _kvstore_adapter() -> TypeAdapter[KvStore]:
     from pydantic_tensorstore import KvStore
 
-    return TypeAdapter(KvStore)
+    return TypeAdapter(KvStore, config=ConfigDict(title="KvStore"))
 
 
 def _validate(adapter: TypeAdapter[T], obj: Any, strict: bool) -> T:

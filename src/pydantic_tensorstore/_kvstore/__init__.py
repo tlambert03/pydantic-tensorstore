@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import Annotated, Any, TypeAlias
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
 from pydantic import BeforeValidator, Field
 
@@ -49,28 +49,29 @@ __all__ = [
 def _parse_kvstore_url(value: Any) -> Any:
     """Convert simple, single-driver URLs to dicts; pass anything else through.
 
-    tensorstore accepts URL strings natively (including pipelines such as
-    `memory://a.zip|zip:`), so unknown forms are left as strings.
+    Paths are percent-decoded, matching tensorstore. tensorstore accepts URL
+    strings natively (including pipelines such as `memory://a.zip|zip:`), so
+    unknown forms are left as strings.
     """
     if not isinstance(value, str) or "|" in value:
         return value
     if value.startswith("file://"):
-        return {"driver": "file", "path": value[len("file://") :]}
+        return {"driver": "file", "path": unquote(value[len("file://") :])}
     if value.startswith("memory://"):
-        path = value[len("memory://") :]
+        path = unquote(value[len("memory://") :])
         return {"driver": "memory", **({"path": path} if path else {})}
     if value.startswith(("s3://", "gs://")):
         driver = "s3" if value.startswith("s3://") else "gcs"
         bucket, _, path = value.split("://", 1)[1].partition("/")
+        path = unquote(path)
         return {"driver": driver, "bucket": bucket, **({"path": path} if path else {})}
     if value.startswith(("http://", "https://")):
         parts = urlsplit(value)
         base_url = parts._replace(path="").geturl()
-        path = parts.path.lstrip("/")
         return {
             "driver": "http",
             "base_url": base_url,
-            **({"path": path} if path else {}),
+            **({"path": parts.path} if parts.path else {}),
         }
     return value
 

@@ -1,7 +1,10 @@
+import json
+import math
 from pathlib import Path
 
 import pytest
 from conftest import PINNED_VERSION, TS_VERSION, skip_if_older_tensorstore
+from pydantic import TypeAdapter
 
 import pydantic_tensorstore as pts
 from pydantic_tensorstore import validate_spec
@@ -693,8 +696,104 @@ def test_kvstore_string_parsing() -> None:
     spec = pts.validate_spec({"driver": "zarr3", "kvstore": "https://x.com/a/b"})
     assert isinstance(spec.kvstore, pts.HTTPKvStore)
     assert spec.kvstore.base_url == "https://x.com"
-    assert spec.kvstore.path == "a/b"
+    assert spec.kvstore.path == "/a/b"  # tensorstore keeps the leading slash
+
+    # paths are percent-decoded, exactly as tensorstore does
+    for url in ("file:///data/a%20b", "s3://bucket/a%20b", "memory://a%20b"):
+        assert pts.validate_kvstore(url).model_dump() == ts.KvStore.Spec(url).to_json()
     spec = pts.validate_spec({"driver": "zarr3", "kvstore": "memory://a.zip|zip:"})
     assert spec.kvstore == "memory://a.zip|zip:"
     if TS_VERSION is not None and TS_VERSION >= PINNED_VERSION:
         assert spec.to_tensorstore().to_json()["kvstore"]["driver"] == "zip"
+
+
+# Specs that can be created for real, so that tensorstore's *own* output can be fed
+# back through the models. This is the direction users actually rely on, and the one
+# that hid two bugs: ChunkLayout demanding a `rank` tensorstore infers, and N5 blosc
+# omitting the `blocksize` tensorstore emits.
+CREATABLE = [
+    {
+        "driver": "zarr3",
+        "kvstore": "memory://",
+        "dtype": "uint16",
+        "schema": {"domain": {"shape": [100, 200]}},
+    },
+    {
+        "driver": "zarr",
+        "kvstore": "memory://",
+        "dtype": "float32",
+        "schema": {"domain": {"shape": [50, 60]}},
+    },
+    {"driver": "n5", "kvstore": "memory://", "dtype": "uint16"},
+    {
+        "driver": "neuroglancer_precomputed",
+        "kvstore": "memory://",
+        "multiscale_metadata": {
+            "type": "image",
+            "data_type": "uint8",
+            "num_channels": 1,
+        },
+        "scale_metadata": {
+            "size": [64, 64, 64],
+            "chunk_size": [16, 16, 16],
+            "resolution": [1, 1, 1],
+            "encoding": "raw",
+        },
+    },
+    {
+        "driver": "zarr3",
+        "kvstore": {"driver": "ocdbt", "base": "memory://"},
+        "dtype": "int32",
+        "schema": {"domain": {"shape": [10]}},
+    },
+]
+
+
+@pytest.fixture(
+    params=CREATABLE,
+    ids=lambda s: (
+        s["driver"] + "-" + s["kvstore"]["driver"]
+        if isinstance(s["kvstore"], dict)
+        else s["driver"]
+    ),
+)
+def created_store(request: pytest.FixtureRequest) -> ts.TensorStore:
+    spec = dict(request.param)
+    if spec["driver"] == "n5":
+        spec = {**spec, "schema": {"domain": {"shape": [100, 200]}}}
+    return ts.open(spec, create=True).result()
+
+
+def test_created_store_spec_round_trips(created_store: ts.TensorStore) -> None:
+    """tensorstore's own spec output validates and round-trips unchanged."""
+    for kwargs in ({}, {"minimal_spec": True}):
+        raw = created_store.spec(**kwargs).to_json()
+        ours = validate_spec(raw)
+        assert ours.to_tensorstore() == ts.Spec(raw)
+
+
+def test_created_store_schema_round_trips(created_store: ts.TensorStore) -> None:
+    """`store.schema` / `store.chunk_layout` / `store.codec` validate and round-trip."""
+    schema_json = created_store.schema.to_json()
+    assert pts.Schema.model_validate(schema_json).model_dump(mode="json") == schema_json
+
+    layout_json = created_store.chunk_layout.to_json()
+    assert (
+        pts.ChunkLayout.model_validate(layout_json).model_dump(mode="json")
+        == layout_json
+    )
+
+    if (codec := created_store.codec) is not None:
+        codec_json = codec.to_json()
+        adapter = TypeAdapter[pts.Codec](pts.Codec)
+        assert adapter.validate_python(codec_json).model_dump(mode="json") == codec_json
+
+
+def test_non_finite_fill_value_survives_json() -> None:
+    """NaN must not silently become null: tensorstore reads `null` as a real value."""
+    spec = pts.Zarr3Spec(
+        kvstore="memory://", schema=pts.Schema(dtype="float32", fill_value=float("nan"))
+    )
+    assert math.isnan(spec.to_tensorstore().to_json()["schema"]["fill_value"])
+    from_json = ts.Spec(json.loads(spec.model_dump_json()))
+    assert math.isnan(from_json.to_json()["schema"]["fill_value"])

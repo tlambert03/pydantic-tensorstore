@@ -167,26 +167,43 @@ write/read-specific value that is also specified."""
         ),
     )
 
+    @property
+    def effective_rank(self) -> int | None:
+        """Rank, inferred from a per-dimension field when not given explicitly.
+
+        tensorstore infers the rank rather than requiring it, and
+        `ChunkLayout.to_json()` omits `rank` while emitting `inner_order`.
+        """
+        if self.rank is not None:
+            return self.rank
+        for attr in (
+            "inner_order",
+            "inner_order_soft_constraint",
+            "grid_origin",
+            "grid_origin_soft_constraint",
+        ):
+            if (value := getattr(self, attr)) is not None:
+                return len(value)
+        return None
+
     @model_validator(mode="after")
     def _post_validate(self) -> Self:
-        """Validate that inner_order is a valid permutation."""
-        # validate_inner_order and inner_order_soft_constraint
+        """Validate inner_order permutations and per-dimension field lengths."""
+        rank = self.effective_rank
+
         for field in ["inner_order", "inner_order_soft_constraint"]:
-            if (v := getattr(self, field)) is not None:
-                if self.rank is None:
-                    raise ValueError(f"rank must be specified when {field} is provided")
-                if sorted(v) != list(range(self.rank)):
+            if (v := getattr(self, field)) is not None and rank is not None:
+                if sorted(v) != list(range(rank)):
                     raise ValueError(
                         f"{field} must be a permutation of "
-                        f"[0, 1, ..., {self.rank - 1}], got {v}"
+                        f"[0, 1, ..., {rank - 1}], got {v}"
                     )
 
-        # validate_grid_origin_length and grid_origin_soft_constraint_length
         for field in ["grid_origin", "grid_origin_soft_constraint"]:
             value = getattr(self, field)
-            if value is not None and self.rank is not None and len(value) != self.rank:
+            if value is not None and rank is not None and len(value) != rank:
                 raise ValueError(
-                    f"{field} length ({len(value)}) must equal rank ({self.rank})"
+                    f"{field} length ({len(value)}) must equal rank ({rank})"
                 )
 
         return self

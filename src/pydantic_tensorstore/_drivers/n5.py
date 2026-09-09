@@ -64,6 +64,11 @@ class N5CompressionBlosc(TensorStoreModel):
     shuffle: Literal[0, 1, 2] = Field(
         description="Shuffle filter: 0 none, 1 byte-wise, 2 bit-wise."
     )
+    blocksize: NonNegativeInt | None = Field(
+        default=None,
+        description="Block size in bytes. Default: `0` (automatic). Undocumented "
+        "upstream, but emitted by tensorstore and accepted on read.",
+    )
 
 
 class N5CompressionBzip2(TensorStoreModel):

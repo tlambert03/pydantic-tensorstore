@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shutil
 import sys
@@ -23,7 +24,11 @@ DEFAULT_DEST = Path(__file__).parent.parent / "tests" / "ts_schema"
 
 
 def _get(url: str) -> bytes:
-    req = urllib.request.Request(url, headers={"User-Agent": "pydantic-tensorstore"})
+    headers = {"User-Agent": "pydantic-tensorstore"}
+    # unauthenticated GitHub API access is 60 requests/hour, shared across CI runners
+    if token := os.environ.get("GITHUB_TOKEN"):
+        headers["Authorization"] = f"Bearer {token}"
+    req = urllib.request.Request(url, headers=headers)
     with urllib.request.urlopen(req) as resp:
         return resp.read()  # type: ignore[no-any-return]
 

@@ -128,6 +128,8 @@ jobs:
           python-version: "3.13"
           enable-cache: true
       - name: Fetch latest tensorstore schema
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: uv run --no-project scripts/update_ts_schema.py --latest --dest "$RUNNER_TEMP/ts_schema"
       - name: Install latest tensorstore
         run: uv sync --no-dev --group test --upgrade-package tensorstore
@@ -136,7 +138,7 @@ jobs:
           PTS_SCHEMA_DIR: ${{ runner.temp }}/ts_schema
         run: |
           uv run --no-sync python -c "from importlib.metadata import version; print('tensorstore', version('tensorstore'))"
-          uv run --no-sync pytest -v tests/test_schema_conformance.py tests/test_dtypes.py tests/test_tensorstore.py --deselect tests/test_schema_conformance.py::test_vendored_version_matches_package
+          uv run --no-sync pytest -v tests/test_schema_conformance.py tests/test_dtypes.py tests/test_since.py tests/test_tensorstore.py --deselect tests/test_schema_conformance.py::test_vendored_version_matches_package
       - name: Report drift
         if: failure()
         uses: JasonEtco/create-an-issue@v2
@@ -149,7 +151,7 @@ jobs:
 
   build-and-inspect-package:
     name: Build & inspect package.
-    needs: test
+    needs: [test, tensorstore-compat, lint]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

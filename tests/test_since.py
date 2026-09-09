@@ -159,3 +159,45 @@ def test_check_without_tensorstore_is_noop(monkeypatch: pytest.MonkeyPatch) -> N
 
     monkeypatch.setattr(base, "installed_tensorstore_version", lambda: None)
     pts.Zarr3Spec(kvstore=MEM, open_as_void=True).check_tensorstore_version()
+
+
+def test_inline_context_resources_are_detected() -> None:
+    """Inline resources hide inside untyped `ContextResource` fields and extras."""
+    inline = pts.validate_spec(
+        {
+            "driver": "zarr3",
+            "kvstore": {
+                "driver": "s3",
+                "bucket": "my-bucket",
+                "aws_credentials": {"type": "anonymous"},
+            },
+        }
+    )
+    assert inline.required_tensorstore_version() == "0.1.72"
+
+    # the same field as a string reference predates the inline form
+    ref = pts.validate_spec(
+        {
+            "driver": "zarr3",
+            "kvstore": {
+                "driver": "s3",
+                "bucket": "my-bucket",
+                "aws_credentials": "aws_credentials",
+            },
+        }
+    )
+    assert ref.required_tensorstore_version() == pts.MIN_TENSORSTORE_VERSION
+
+    # named context resources live in `extra`, and reuse the base resource's marker
+    named = pts.validate_spec(
+        {
+            "driver": "zarr3",
+            "kvstore": MEM,
+            "context": {"aws_credentials#x": {"type": "anonymous"}},
+        }
+    )
+    assert named.required_tensorstore_version() == "0.1.72"
+    unaffected = pts.validate_spec(
+        {"driver": "zarr3", "kvstore": MEM, "context": {"cache_pool#x": {}}}
+    )
+    assert unaffected.required_tensorstore_version() == pts.MIN_TENSORSTORE_VERSION

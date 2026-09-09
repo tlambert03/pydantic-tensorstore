@@ -18,3 +18,6 @@ class GCSKvStore(BaseKvStore):
     gcs_request_concurrency: ContextResource | None = None
     gcs_user_project: ContextResource | None = None
     gcs_request_retries: ContextResource | None = None
+    # accepted by tensorstore, absent from its documented schema
+    experimental_gcs_rate_limiter: ContextResource | None = None
+    data_copy_concurrency: ContextResource | None = None

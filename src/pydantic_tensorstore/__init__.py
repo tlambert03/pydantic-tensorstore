@@ -24,6 +24,8 @@ from pydantic_tensorstore._core.base import (
     TensorStoreModel,
     UnsupportedTensorStoreVersionError,
     installed_tensorstore_version,
+    since,
+    since_inline,
 )
 from pydantic_tensorstore._core.chunk_layout import ChunkLayout, ChunkLayoutGrid
 from pydantic_tensorstore._core.codec import CodecBase
@@ -327,6 +329,8 @@ __all__ = [
     "Zarr3ZstdConfig",
     "ZipKvStore",
     "installed_tensorstore_version",
+    "since",
+    "since_inline",
     "validate_kvstore",
     "validate_spec",
 ]

@@ -260,6 +260,11 @@ KNOWN_EXTRAS: dict[str, set[str]] = {
     "Context": {id_[len("Context.") :] for id_ in IDS if id_.startswith("Context.")},
     # documented as an opaque object, but tensorstore accepts (and validates) `level`
     "driver/zarr3/Codec/gzip.configuration": {"level"},
+    # accepted (and emitted) by tensorstore but missing from its documented schema;
+    # each is covered by a real round-trip in test_tensorstore.py
+    "driver/n5/Compression/blosc": {"blocksize"},
+    "kvstore/gcs": {"experimental_gcs_rate_limiter", "data_copy_concurrency"},
+    "driver/zarr3/Metadata": {"storage_transformers"},
 }
 
 # examples in the tensorstore repo that tensorstore itself rejects

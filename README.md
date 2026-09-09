@@ -133,6 +133,25 @@ Two design rules keep the models forward-compatible:
   pipelines such as `"memory://a.zip|zip:"`) is kept verbatim and handed to
   TensorStore unchanged.
 
+## Known differences from TensorStore
+
+A few deliberate or documented divergences, so they don't surprise you:
+
+- **Partial specs are rejected.** TensorStore accepts `{"driver": "zarr3"}` with no
+  `kvstore`, to be filled in later via `ts.Spec.update()` or an `open()` argument.
+  The models require `kvstore` (and `cast`'s `dtype`), trading that pattern for a
+  clear "you forgot the kvstore" error. Specs produced by a real store always
+  include it.
+- **Non-finite numbers become strings in JSON.** `model_dump_json()` writes
+  `"NaN"`, `"Infinity"` and `"-Infinity"`, which TensorStore reads back as floats.
+  Python-mode `model_dump()` keeps the float. Note that re-validating that JSON
+  gives you the string back, since `fill_value` is untyped.
+- **`schema` is spelled `schema_` on the model,** because `schema` collides with a
+  Pydantic attribute. Both work at runtime, but mypy only accepts `schema_=`;
+  `validate_spec()` takes plain `"schema"` in a dict either way.
+- **Arrays are not silently truncated.** `ArraySpec` refuses a `dtype` that would
+  lose data, rather than quietly rounding.
+
 ## Coverage
 
 Every driver, kvstore, and context resource documented in tensorstore
