@@ -46,15 +46,12 @@ import tensorstore as ts
 
 spec = {
     "driver": "zarr",
-    "kvstore": {
-        "driver": "file",
-        "path": "/data/"
-    },
+    "kvstore": {"driver": "file", "path": "/data/"},
     "metadata": {
         "chunks": [64, 64],
         "compressor": {"id": "blosc", "cname": "lz4", "clevel": 5},
-        "dtype": "<f4"  # Is this right? 🤔
-    }
+        "dtype": "<f4",  # Is this right? 🤔
+    },
 }
 # Hope it works! 🤞
 ```

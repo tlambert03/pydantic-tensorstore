@@ -3,11 +3,10 @@
 Defines how data is partitioned into chunks for storage and I/O optimization.
 """
 
-from typing import Annotated, ClassVar, Literal
+from typing import Annotated, ClassVar, Literal, Self
 
 from annotated_types import Ge, Interval
 from pydantic import BaseModel, Field, NonNegativeFloat, NonNegativeInt, model_validator
-from typing_extensions import Self
 
 
 class ChunkLayoutGrid(BaseModel):

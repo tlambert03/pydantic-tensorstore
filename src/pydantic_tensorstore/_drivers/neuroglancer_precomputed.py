@@ -1,6 +1,6 @@
 """Neuroglancer Precomputed driver specification."""
 
-from typing import Annotated, ClassVar, Literal, TypeAlias
+from typing import Annotated, ClassVar, Literal, Self, TypeAlias
 
 from annotated_types import Interval
 from pydantic import (
@@ -12,7 +12,6 @@ from pydantic import (
     PositiveInt,
     model_validator,
 )
-from typing_extensions import Self
 
 from pydantic_tensorstore._core.codec import CodecBase
 from pydantic_tensorstore._core.spec import ChunkedTensorStoreKvStoreAdapterSpec

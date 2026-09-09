@@ -3,7 +3,7 @@
 import re
 from collections.abc import Sequence
 from contextlib import suppress
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated, Any, Literal, TypeAlias
 
 import numpy as np
@@ -32,7 +32,7 @@ ChunkShape: TypeAlias = list[int | None]
 DomainShape: TypeAlias = list[int | Literal["*"]]
 
 
-class DataType(str, Enum):
+class DataType(StrEnum):
     """TensorStore data types.
 
     Based on the supported data types from TensorStore's C++ implementation.
@@ -109,7 +109,7 @@ class DataType(str, Enum):
         )
 
 
-class OpenMode(str, Enum):
+class OpenMode(StrEnum):
     """TensorStore open modes.
 
     Controls how TensorStore opens or creates datasets.
@@ -122,7 +122,7 @@ class OpenMode(str, Enum):
     ASSUME_CACHED_METADATA = "assume_cached_metadata"
 
 
-class ReadWriteMode(str, Enum):
+class ReadWriteMode(StrEnum):
     """Read/write access modes."""
 
     READ = "read"

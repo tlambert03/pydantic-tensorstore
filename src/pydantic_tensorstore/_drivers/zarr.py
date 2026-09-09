@@ -1,7 +1,7 @@
 """Zarr driver specification for Zarr v2 format."""
 
 import re
-from typing import Annotated, Any, Literal, TypeAlias
+from typing import Annotated, Any, Literal, Self, TypeAlias
 
 from annotated_types import Interval
 from pydantic import (
@@ -13,7 +13,6 @@ from pydantic import (
     PositiveInt,
     model_validator,
 )
-from typing_extensions import Self
 
 from pydantic_tensorstore._core.codec import CodecBase
 from pydantic_tensorstore._core.spec import ChunkedTensorStoreKvStoreAdapterSpec
