@@ -5,11 +5,10 @@ supporting operations like slicing, transposition, and broadcasting.
 """
 
 from collections.abc import Sequence
-from typing import Annotated, Any, ClassVar, Literal, TypeAlias
+from typing import Annotated, Any, ClassVar, Literal, Self, TypeAlias
 
 from annotated_types import Interval, Len
 from pydantic import BaseModel, Field, NonNegativeInt, field_validator, model_validator
-from typing_extensions import Self
 
 from pydantic_tensorstore._types import Shape
 

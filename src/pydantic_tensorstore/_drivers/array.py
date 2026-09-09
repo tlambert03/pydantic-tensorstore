@@ -1,11 +1,10 @@
 """Array driver specification for in-memory arrays."""
 
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, Self
 
 import numpy as np
 from pydantic import Field, GetCoreSchemaHandler, model_validator
 from pydantic_core import core_schema
-from typing_extensions import Self
 
 from pydantic_tensorstore._core.spec import BaseSpec
 from pydantic_tensorstore._types import ContextResource, DataType
@@ -22,9 +21,9 @@ class ArrayValidator:
             return val.tolist()  # type: ignore[no-any-return]
 
         def _validate_array(val: Any) -> np.ndarray:
-            if not isinstance(val, np.ndarray):
-                val = np.asarray(val, dtype=float)
-            return val
+            if isinstance(val, np.ndarray):
+                return val
+            return np.asarray(val, dtype=float)
 
         ser_schema = core_schema.plain_serializer_function_ser_schema(
             _serialize, return_schema=core_schema.list_schema()
