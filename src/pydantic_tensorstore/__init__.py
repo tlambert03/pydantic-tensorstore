@@ -19,23 +19,41 @@ try:
 except PackageNotFoundError:  # pragma: no cover
     __version__ = "0.0.0"
 
-
-# Import all types, enums and utilities
-# Import all core classes and types
+from pydantic_tensorstore._core.base import (
+    MIN_TENSORSTORE_VERSION,
+    TensorStoreModel,
+    UnsupportedTensorStoreVersionError,
+    installed_tensorstore_version,
+)
 from pydantic_tensorstore._core.chunk_layout import ChunkLayout, ChunkLayoutGrid
 from pydantic_tensorstore._core.codec import CodecBase
 from pydantic_tensorstore._core.context import (
+    AwsCredentials,
+    AwsCredentialsAnonymous,
+    AwsCredentialsDefault,
+    AwsCredentialsEcs,
+    AwsCredentialsEnvironment,
+    AwsCredentialsImds,
+    AwsCredentialsProfile,
     CachePool,
     Context,
     DataCopyConcurrency,
     FileIOConcurrency,
-    HTTPConcurrency,
+    FileIOLocking,
+    FileIOMode,
+    GCSUserProject,
+    HTTPRequestConcurrency,
+    MemoryKeyValueStore,
+    OcdbtCoordinator,
+    RateLimiter,
+    RequestRetries,
 )
 from pydantic_tensorstore._core.schema import Schema
 from pydantic_tensorstore._core.spec import (
     BaseSpec,
     CacheRevalidationBound,
     ChunkedTensorStoreKvStoreAdapterSpec,
+    TensorStoreAdapterSpec,
     TensorStoreKvStoreAdapterSpec,
 )
 from pydantic_tensorstore._core.transform import (
@@ -46,41 +64,44 @@ from pydantic_tensorstore._core.transform import (
     IntOrInf,
     OutputIndexMap,
 )
-
-# Import all driver specs and related classes
 from pydantic_tensorstore._drivers import Codec, TensorStoreSpec
-
-# Import Array-specific classes
 from pydantic_tensorstore._drivers.array import ArraySpec
-
-# Import Auto-specific classes
 from pydantic_tensorstore._drivers.auto import AutoSpec
-
-# Import N5-specific classes
+from pydantic_tensorstore._drivers.cast import CastSpec
+from pydantic_tensorstore._drivers.downsample import DownsampleMethod, DownsampleSpec
+from pydantic_tensorstore._drivers.image import (
+    AvifSpec,
+    BmpSpec,
+    JpegSpec,
+    PngSpec,
+    TiffSpec,
+    WebpSpec,
+)
+from pydantic_tensorstore._drivers.json import JsonSpec
 from pydantic_tensorstore._drivers.n5 import (
     VALID_N5_DTYPES,
     N5Codec,
     N5Compression,
+    N5CompressionBlosc,
+    N5CompressionBzip2,
+    N5CompressionGzip,
+    N5CompressionRaw,
+    N5CompressionXZ,
+    N5CompressionZstd,
     N5DataType,
     N5Metadata,
     N5Spec,
 )
-
-# Import Neuroglancer-specific classes
 from pydantic_tensorstore._drivers.neuroglancer_precomputed import (
     VALID_NEUROGLANCER_DTYPES,
     NeuroglancerDataType,
+    NeuroglancerEncoding,
     NeuroglancerMultiscaleMetadata,
     NeuroglancerPrecomputedCodec,
     NeuroglancerPrecomputedSpec,
     NeuroglancerScaleMetadata,
-    NeuroglancerShardingSpec,
 )
-
-# Import TIFF-specific classes
-from pydantic_tensorstore._drivers.tiff import TiffSpec
-
-# Import Zarr v2-specific classes
+from pydantic_tensorstore._drivers.stack import StackSpec
 from pydantic_tensorstore._drivers.zarr import (
     Zarr2Codec,
     Zarr2Compressor,
@@ -94,13 +115,17 @@ from pydantic_tensorstore._drivers.zarr import (
     Zarr2Spec,
     Zarr2StructuredDataType,
 )
-
-# Import Zarr v3-specific classes
 from pydantic_tensorstore._drivers.zarr3 import (
     VALID_ZARR3_DTYPES,
+    Zarr3Attributes,
+    Zarr3BloscConfig,
+    Zarr3BytesConfig,
     Zarr3ChunkConfiguration,
     Zarr3ChunkGrid,
     Zarr3ChunkKeyEncoding,
+    Zarr3ChunkKeyEncodingConfig,
+    Zarr3ChunkKeyEncodingDefault,
+    Zarr3ChunkKeyEncodingV2,
     Zarr3Codec,
     Zarr3CodecBlosc,
     Zarr3CodecBytes,
@@ -110,50 +135,83 @@ from pydantic_tensorstore._drivers.zarr3 import (
     Zarr3CodecShardingIndexed,
     Zarr3CodecTranspose,
     Zarr3CodecZstd,
+    Zarr3CRC32CConfig,
     Zarr3DataType,
+    Zarr3GzipConfig,
     Zarr3Metadata,
+    Zarr3ShardingIndexedConfig,
     Zarr3SingleCodec,
     Zarr3Spec,
+    Zarr3TransposeConfig,
+    Zarr3ZstdConfig,
 )
-
-# Import KvStore classes
 from pydantic_tensorstore._kvstore import (
     BaseKvStore,
     FileKvStore,
+    GCSKvStore,
+    HTTPKvStore,
+    KvStackKvStore,
+    KvStackLayer,
     KvStore,
+    KvStoreAdapter,
+    KvStoreUrl,
     MemoryKvStore,
+    NeuroglancerShardingSpec,
+    NeuroglancerUint64ShardedKvStore,
+    OcdbtConfig,
+    OcdbtKvStore,
+    OcdbtZstdCompression,
     S3KvStore,
+    TsGrpcKvStore,
+    Zarr3ShardingIndexedKvStore,
+    ZipKvStore,
 )
 from pydantic_tensorstore._types import (
-    ChunkShape,
+    DTYPE_SINCE,
     ContextResource,
     ContextResourceName,
     DataType,
-    DomainShape,
     DriverName,
     OpenMode,
     ReadWriteMode,
-    Shape,
     Unit,
 )
-from pydantic_tensorstore._validators import validate_spec
+from pydantic_tensorstore._validators import validate_kvstore, validate_spec
 
-# FIXME: deal with circular references to Codecs
-Schema.model_rebuild()
+TENSORSTORE_VERSION = "0.1.85"
+"""The tensorstore release whose JSON schema these models were verified against.
+
+Specs also work with older releases down to `MIN_TENSORSTORE_VERSION` as long as
+they avoid newer features; `spec.required_tensorstore_version()` reports the oldest
+release a given spec needs, and `to_tensorstore()` checks it before calling
+tensorstore.
+"""
 
 __all__ = [
+    "DTYPE_SINCE",
+    "MIN_TENSORSTORE_VERSION",
+    "TENSORSTORE_VERSION",
     "VALID_N5_DTYPES",
     "VALID_NEUROGLANCER_DTYPES",
     "VALID_ZARR3_DTYPES",
     "ArraySpec",
     "AutoSpec",
+    "AvifSpec",
+    "AwsCredentials",
+    "AwsCredentialsAnonymous",
+    "AwsCredentialsDefault",
+    "AwsCredentialsEcs",
+    "AwsCredentialsEnvironment",
+    "AwsCredentialsImds",
+    "AwsCredentialsProfile",
     "BaseKvStore",
     "BaseSpec",
+    "BmpSpec",
     "CachePool",
     "CacheRevalidationBound",
+    "CastSpec",
     "ChunkLayout",
     "ChunkLayoutGrid",
-    "ChunkShape",
     "ChunkedTensorStoreKvStoreAdapterSpec",
     "Codec",
     "CodecBase",
@@ -162,39 +220,72 @@ __all__ = [
     "ContextResourceName",
     "DataCopyConcurrency",
     "DataType",
-    "DomainShape",
+    "DownsampleMethod",
+    "DownsampleSpec",
     "DriverName",
     "FileIOConcurrency",
+    "FileIOLocking",
+    "FileIOMode",
     "FileKvStore",
-    "HTTPConcurrency",
+    "GCSKvStore",
+    "GCSUserProject",
+    "HTTPKvStore",
+    "HTTPRequestConcurrency",
     "ImplicitBound",
     "IndexDomain",
     "IndexInterval",
     "IndexTransform",
     "IntOrInf",
+    "JpegSpec",
+    "JsonSpec",
+    "KvStackKvStore",
+    "KvStackLayer",
     "KvStore",
+    "KvStoreAdapter",
+    "KvStoreUrl",
+    "MemoryKeyValueStore",
     "MemoryKvStore",
     "N5Codec",
     "N5Compression",
+    "N5CompressionBlosc",
+    "N5CompressionBzip2",
+    "N5CompressionGzip",
+    "N5CompressionRaw",
+    "N5CompressionXZ",
+    "N5CompressionZstd",
     "N5DataType",
     "N5Metadata",
     "N5Spec",
     "NeuroglancerDataType",
+    "NeuroglancerEncoding",
     "NeuroglancerMultiscaleMetadata",
     "NeuroglancerPrecomputedCodec",
     "NeuroglancerPrecomputedSpec",
     "NeuroglancerScaleMetadata",
     "NeuroglancerShardingSpec",
+    "NeuroglancerUint64ShardedKvStore",
+    "OcdbtConfig",
+    "OcdbtCoordinator",
+    "OcdbtKvStore",
+    "OcdbtZstdCompression",
     "OpenMode",
     "OutputIndexMap",
+    "PngSpec",
+    "RateLimiter",
     "ReadWriteMode",
+    "RequestRetries",
     "S3KvStore",
     "Schema",
-    "Shape",
+    "StackSpec",
+    "TensorStoreAdapterSpec",
     "TensorStoreKvStoreAdapterSpec",
+    "TensorStoreModel",
     "TensorStoreSpec",
     "TiffSpec",
+    "TsGrpcKvStore",
     "Unit",
+    "UnsupportedTensorStoreVersionError",
+    "WebpSpec",
     "Zarr2Codec",
     "Zarr2Compressor",
     "Zarr2CompressorBlosc",
@@ -206,9 +297,16 @@ __all__ = [
     "Zarr2SimpleDataType",
     "Zarr2Spec",
     "Zarr2StructuredDataType",
+    "Zarr3Attributes",
+    "Zarr3BloscConfig",
+    "Zarr3BytesConfig",
+    "Zarr3CRC32CConfig",
     "Zarr3ChunkConfiguration",
     "Zarr3ChunkGrid",
     "Zarr3ChunkKeyEncoding",
+    "Zarr3ChunkKeyEncodingConfig",
+    "Zarr3ChunkKeyEncodingDefault",
+    "Zarr3ChunkKeyEncodingV2",
     "Zarr3Codec",
     "Zarr3CodecBlosc",
     "Zarr3CodecBytes",
@@ -219,8 +317,16 @@ __all__ = [
     "Zarr3CodecTranspose",
     "Zarr3CodecZstd",
     "Zarr3DataType",
+    "Zarr3GzipConfig",
     "Zarr3Metadata",
+    "Zarr3ShardingIndexedConfig",
+    "Zarr3ShardingIndexedKvStore",
     "Zarr3SingleCodec",
     "Zarr3Spec",
+    "Zarr3TransposeConfig",
+    "Zarr3ZstdConfig",
+    "ZipKvStore",
+    "installed_tensorstore_version",
+    "validate_kvstore",
     "validate_spec",
 ]

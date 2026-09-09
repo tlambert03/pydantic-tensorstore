@@ -110,3 +110,6 @@ ENV/
 .vscode/
 .idea/
 uv.lock
+
+# local agent settings
+.claude/

@@ -3,16 +3,20 @@
 Defines how data is partitioned into chunks for storage and I/O optimization.
 """
 
-from typing import Annotated, ClassVar, Literal, Self
+from __future__ import annotations
+
+from typing import Annotated, Literal, Self
 
 from annotated_types import Ge, Interval
-from pydantic import BaseModel, Field, NonNegativeFloat, NonNegativeInt, model_validator
+from pydantic import Field, NonNegativeFloat, NonNegativeInt, model_validator
+
+from pydantic_tensorstore._core.base import TensorStoreModel
 
 
-class ChunkLayoutGrid(BaseModel):
+class ChunkLayoutGrid(TensorStoreModel):
     """Constraints on the write/read/codec chunk grids."""
 
-    shape: list[NonNegativeInt] | Literal[-1] | None = Field(
+    shape: list[NonNegativeInt | Literal[-1] | None] | None = Field(
         default=None,
         description=(
             """Hard constraints on the chunk size for each dimension.
@@ -24,13 +28,13 @@ special value of -1 for a given dimension indicates that the chunk size should e
 full extent of the domain, and is always treated as a soft constraint."""
         ),
     )
-    shape_soft_constraint: list[NonNegativeInt] | Literal[-1] | None = Field(
+    shape_soft_constraint: list[NonNegativeInt | Literal[-1] | None] | None = Field(
         default=None,
         description="Preferred chunk sizes for each dimension. If a non-zero, "
         "non-null size for a given dimension is specified in both shape and "
         "shape_soft_constraint, shape takes precedence.",
     )
-    aspect_ratio: list[NonNegativeFloat] | None = Field(
+    aspect_ratio: list[NonNegativeFloat | None] | None = Field(
         default=None,
         description=(
             """Aspect ratio of the chunk shape.
@@ -46,7 +50,7 @@ resultant chunk size will be [60, 90, 90] (assuming it is not otherwise constrai
 """
         ),
     )
-    aspect_ratio_soft_constraint: list[NonNegativeFloat] | None = Field(
+    aspect_ratio_soft_constraint: list[NonNegativeFloat | None] | None = Field(
         default=None,
         description=(
             "Soft constraint on aspect ratio, lower precedence than aspect_ratio."
@@ -98,14 +102,12 @@ resultant chunk size will be [60, 90, 90] (assuming it is not otherwise constrai
         return self
 
 
-class ChunkLayout(BaseModel):
+class ChunkLayout(TensorStoreModel):
     """Chunk layout specification.
 
     Controls how array data is partitioned into chunks for storage,
     compression, and parallel I/O.
     """
-
-    model_config: ClassVar = {"extra": "forbid", "validate_assignment": True}
 
     rank: Annotated[int, Interval(ge=0, le=32)] | None = Field(
         default=None, description="Number of dimensions"

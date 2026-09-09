@@ -26,8 +26,7 @@ classifiers = [
     "Topic :: Scientific/Engineering",
 ]
 dependencies = [
-    "pydantic>=2.7.0",
-    "pydantic-core>=2.20.0; python_version>='3.13'",
+    "pydantic>=2.11.0",
     "pydantic-core>=2.35.0; python_version>='3.14'",
     "numpy>=1.23.2",
     "numpy>=2.1; python_version>='3.13'",
@@ -37,6 +36,7 @@ dependencies = [
 [project.urls]
 homepage = "https://github.com/tlambert03/pydantic-tensorstore"
 repository = "https://github.com/tlambert03/pydantic-tensorstore"
+changelog = "https://github.com/tlambert03/pydantic-tensorstore/releases"
 
 [project.optional-dependencies]
 tensorstore = [
@@ -51,6 +51,7 @@ test = [
     "pytest>=8.0.0; python_version>='3.14'",
     "pytest-cov>=4.0.0",
     "pydantic-tensorstore[tensorstore]",
+    "pyyaml>=6.0",
 ]
 dev = [
     { include-group = "test" },
@@ -96,6 +97,22 @@ select = [
 ignore = [
     "D401",   # First line should be in imperative mood (remove to opt in)
     "ANN401", # allow Any type
+]
+
+[tool.ruff.lint.flake8-type-checking]
+# pydantic evaluates annotations at runtime, so imports for these must not be moved
+# into `if TYPE_CHECKING:` blocks.
+runtime-evaluated-base-classes = [
+    "pydantic.BaseModel",
+    "pydantic_tensorstore._core.base.TensorStoreModel",
+    "pydantic_tensorstore._core.codec.CodecBase",
+    "pydantic_tensorstore._core.spec.BaseSpec",
+    "pydantic_tensorstore._core.spec.TensorStoreAdapterSpec",
+    "pydantic_tensorstore._core.spec.TensorStoreKvStoreAdapterSpec",
+    "pydantic_tensorstore._core.spec.ChunkedTensorStoreKvStoreAdapterSpec",
+    "pydantic_tensorstore._kvstore.base.BaseKvStore",
+    "pydantic_tensorstore._kvstore.base.KvStoreAdapter",
+    "pydantic_tensorstore._kvstore.base._CachedKvStoreAdapter",
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -153,6 +170,7 @@ source = ["pydantic_tensorstore"]
 ignore = [
     ".pre-commit-config.yaml",
     ".ruff_cache/**/*",
+    "scripts/**/*",
     "tests/**/*",
     "uv.lock",
 ]
@@ -160,3 +178,7 @@ ignore = [
 # https://github.com/crate-ci/typos/blob/master/docs/reference.md
 [tool.typos.default]
 extend-ignore-identifiers-re = ["ser"]
+
+[tool.typos.files]
+# vendored verbatim from google/tensorstore; upstream typos are not ours to fix
+extend-exclude = ["tests/ts_schema/**"]
