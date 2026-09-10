@@ -3,10 +3,12 @@
 See pydantic_tensorstore.Codec for the full union type.
 """
 
-from pydantic import BaseModel
+from __future__ import annotations
+
+from pydantic_tensorstore._core.base import TensorStoreModel
 
 
-class CodecBase(BaseModel):
+class CodecBase(TensorStoreModel):
     """Codecs are specified by a required driver property that identifies the driver.
 
     All other properties are driver-specific. Refer to the driver documentation for the

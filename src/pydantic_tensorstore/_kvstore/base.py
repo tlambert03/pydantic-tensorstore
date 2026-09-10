@@ -1,30 +1,30 @@
 """Base key-value store specification."""
 
-from typing import ClassVar
+from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from typing import TYPE_CHECKING, Annotated, TypeAlias
 
+from pydantic import Field, StringConstraints
+
+from pydantic_tensorstore._core.base import TensorStoreModel
+from pydantic_tensorstore._core.context import Context
 from pydantic_tensorstore._types import ContextResource
 
+if TYPE_CHECKING:
+    from pydantic_tensorstore._kvstore import KvStore  # noqa: TC004
 
-class BaseKvStore(BaseModel):
+KvStoreUrl: TypeAlias = Annotated[
+    str, StringConstraints(pattern=r"^[a-zA-Z][a-zA-Z0-9+.\-]*:")
+]
+"""A kvstore URL such as `gs://bucket/path` or a pipeline like `memory://a.zip|zip:`."""
+
+
+class BaseKvStore(TensorStoreModel):
     """Base class for key-value store specifications.
 
     Key-value stores provide the underlying storage layer for many TensorStore
     drivers, abstracting over local files, cloud storage, databases, etc.
-
-    Attributes
-    ----------
-        driver: The kvstore driver identifier
-        path: Path within the key-value store
-
-    Example:
-        >>> # Use concrete implementations like MemoryKvStoreSpec
-        >>> from pydantic_tensorstore._kvstore import MemoryKvStoreSpec
-        >>> kvstore = MemoryKvStoreSpec(driver="memory")
     """
-
-    model_config: ClassVar = {"extra": "forbid", "validate_assignment": True}
 
     # driver: str
 
@@ -35,10 +35,25 @@ class BaseKvStore(BaseModel):
             "to correspond to a Unix-style directory path, it should end with '/'."
         ),
     )
-
-    context: dict[str, ContextResource] | None = Field(
+    context: Context | None = Field(
         default=None,
-        description=(
-            "Specifies context resources that augment/override the parent context."
-        ),
+        description="Context resources that augment/override the parent context.",
+    )
+
+
+class KvStoreAdapter(BaseKvStore):
+    """Base for kvstore drivers that wrap another kvstore."""
+
+    base: KvStore = Field(description="Underlying key-value store.")
+
+
+class _CachedKvStoreAdapter(KvStoreAdapter):
+    """Adapter with the common `cache_pool`/`data_copy_concurrency` options."""
+
+    cache_pool: ContextResource | None = Field(
+        default=None, description='Cache pool for data. Default: `"cache_pool"`.'
+    )
+    data_copy_concurrency: ContextResource | None = Field(
+        default=None,
+        description='Concurrency for copying. Default: `"data_copy_concurrency"`.',
     )

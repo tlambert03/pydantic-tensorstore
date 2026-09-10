@@ -4,13 +4,23 @@ Index transforms map from input coordinates to output coordinates,
 supporting operations like slicing, transposition, and broadcasting.
 """
 
+from __future__ import annotations
+
 from collections.abc import Sequence
-from typing import Annotated, Any, ClassVar, Literal, Self, TypeAlias
+from typing import Annotated, Any, Literal, Self, TypeAlias
 
 from annotated_types import Interval, Len
-from pydantic import BaseModel, Field, NonNegativeInt, field_validator, model_validator
+from pydantic import Field, NonNegativeInt, field_validator, model_validator
 
-from pydantic_tensorstore._types import Shape
+from pydantic_tensorstore._core.base import TensorStoreModel
+
+IntOrInf: TypeAlias = Literal["-inf", "+inf"] | int
+ImplicitBound: TypeAlias = Annotated[list[IntOrInf], Len(min_length=1, max_length=1)]
+"""A bound wrapped in a single-element list, marking it as implicit."""
+BoundsList: TypeAlias = list[IntOrInf | ImplicitBound]
+"""Per-dimension bounds: explicit or implicit, finite or infinite."""
+ShapeList: TypeAlias = list[int | Annotated[list[int], Len(min_length=1, max_length=1)]]
+"""Per-dimension extents: explicit or implicit."""
 
 
 def _validate_labels(cls: type, v: Any) -> Any:
@@ -26,32 +36,30 @@ def _validate_labels(cls: type, v: Any) -> Any:
     return v
 
 
-class IndexDomain(BaseModel):
+class IndexDomain(TensorStoreModel):
     """Index domain specification.
 
     Defines the coordinate space for array indexing, including
     bounds, labels, and implicit dimensions.
     """
 
-    model_config: ClassVar = {"extra": "forbid", "validate_assignment": True}
-
     rank: Annotated[int, Interval(ge=0, le=32)] | None = Field(
         default=None, description="Number of dimensions"
     )
 
-    inclusive_min: list[int | list[int]] | None = Field(
+    inclusive_min: BoundsList | None = Field(
         default=None, description="Inclusive lower bounds of the domain."
     )
 
-    exclusive_max: list[int | list[int]] | None = Field(
+    exclusive_max: BoundsList | None = Field(
         default=None, description="Exclusive upper bounds of the domain."
     )
 
-    inclusive_max: list[int | list[int]] | None = Field(
+    inclusive_max: BoundsList | None = Field(
         default=None, description="Inclusive upper bounds of the domain."
     )
 
-    shape: Shape | None = Field(default=None, description="Shape of each dimension")
+    shape: ShapeList | None = Field(default=None, description="Shape of each dimension")
 
     labels: list[str] | None = Field(default=None, description="Dimension labels")
 
@@ -105,10 +113,8 @@ IndexInterval = tuple[int | Literal["-inf"], int | Literal["+inf"]]
 """Specifies a closed interval of integer index values."""
 
 
-class OutputIndexMap(BaseModel):
+class OutputIndexMap(TensorStoreModel):
     """Output index map for index transforms."""
-
-    model_config: ClassVar = {"extra": "forbid"}
 
     offset: int | None = Field(default=None, description="Offset value")
     stride: int | None = Field(default=None, description="Stride value")
@@ -116,8 +122,8 @@ class OutputIndexMap(BaseModel):
     input_dimension: NonNegativeInt | None = Field(
         default=None, description="Input dimension index"
     )
-    index_array: list[int] | int | None = Field(
-        default=None, description="Index array for advanced indexing"
+    index_array: int | list[Any] | None = Field(
+        default=None, description="Index array (possibly nested) for advanced indexing"
     )
     index_array_bounds: IndexInterval | None = Field(
         default=None,
@@ -155,35 +161,31 @@ need not be specified manually.
         return self
 
 
-IntOrInf = Literal["-inf", "+inf"] | int
-ImplicitBound: TypeAlias = Annotated[list[IntOrInf], Len(min_length=1, max_length=1)]
-
-
-class IndexTransform(BaseModel):
+class IndexTransform(TensorStoreModel):
     """Index transform specification.
 
     Maps coordinates from an input space to an output space,
     supporting operations like slicing, broadcasting, and reordering.
     """
 
-    model_config: ClassVar = {"extra": "forbid", "validate_assignment": True}
-
     input_rank: Annotated[int, Interval(ge=0, le=32)] | None = Field(
         default=None, description="Number of input dimensions."
     )
-    input_inclusive_min: list[int | ImplicitBound] | None = Field(
+    input_inclusive_min: BoundsList | None = Field(
         default=None, description="Inclusive lower bounds of the input domain."
     )
 
-    input_exclusive_max: list[int | ImplicitBound] | None = Field(
+    input_exclusive_max: BoundsList | None = Field(
         default=None, description="Exclusive upper bounds of the input domain."
     )
 
-    input_inclusive_max: list[int | ImplicitBound] | None = Field(
+    input_inclusive_max: BoundsList | None = Field(
         default=None, description="Inclusive upper bounds of the input domain."
     )
 
-    input_shape: Shape | None = Field(default=None, description="Input domain shape")
+    input_shape: ShapeList | None = Field(
+        default=None, description="Input domain shape"
+    )
 
     input_labels: list[str] | None = Field(
         default=None, description="Input dimension labels"

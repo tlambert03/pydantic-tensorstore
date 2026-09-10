@@ -1,5 +1,7 @@
 """Common types and enums used throughout TensorStore specifications."""
 
+from __future__ import annotations
+
 import re
 from collections.abc import Sequence
 from contextlib import suppress
@@ -8,15 +10,18 @@ from typing import Annotated, Any, Literal, TypeAlias
 
 import numpy as np
 from pydantic import (
-    BaseModel,
     Field,
     GetCoreSchemaHandler,
     StringConstraints,
+    model_serializer,
     model_validator,
 )
 from pydantic_core import CoreSchema, core_schema
 
+from pydantic_tensorstore._core.base import TensorStoreModel
+
 __all__ = [
+    "DTYPE_SINCE",
     "ChunkShape",
     "ContextResource",
     "DataType",
@@ -32,6 +37,15 @@ ChunkShape: TypeAlias = list[int | None]
 DomainShape: TypeAlias = list[int | Literal["*"]]
 
 
+DTYPE_SINCE: dict[str, str] = {
+    "int2": "0.1.75",
+    "float8_e3m4": "0.1.75",
+    "float4_e2m1fn": "0.1.80",
+    "float8_e8m0fnu": "0.1.85",
+}
+"""tensorstore release that introduced each data type (older ones need no entry)."""
+
+
 class DataType(StrEnum):
     """TensorStore data types.
 
@@ -43,6 +57,7 @@ class DataType(StrEnum):
     BOOL = "bool"
 
     # Signed integers
+    INT2 = "int2"
     INT4 = "int4"
     INT8 = "int8"
     INT16 = "int16"
@@ -62,6 +77,8 @@ class DataType(StrEnum):
     FLOAT8_E4M3B11FNUZ = "float8_e4m3b11fnuz"
     FLOAT8_E5M2 = "float8_e5m2"
     FLOAT8_E5M2FNUZ = "float8_e5m2fnuz"
+    FLOAT8_E8M0FNU = "float8_e8m0fnu"
+    FLOAT4_E2M1FN = "float4_e2m1fn"
     FLOAT16 = "float16"
     BFLOAT16 = "bfloat16"
     FLOAT32 = "float32"
@@ -71,7 +88,9 @@ class DataType(StrEnum):
     COMPLEX64 = "complex64"
     COMPLEX128 = "complex128"
 
-    # String types
+    # Byte / string types
+    CHAR = "char"
+    BYTE = "byte"
     STRING = "string"
     USTRING = "ustring"
 
@@ -134,7 +153,7 @@ ContextResource: TypeAlias = dict | bool | float | int | str | None
 """Specifies a context resource of a particular <resource-type>."""
 
 
-class Unit(BaseModel):
+class Unit(TensorStoreModel):
     """Physical unit specification."""
 
     multiplier: float = Field(default=1.0, description="Unit multiplier")
@@ -149,6 +168,11 @@ class Unit(BaseModel):
             "there is a specific need to deviate."
         ),
     )
+
+    @model_serializer
+    def _to_canonical(self) -> list[Any]:
+        """Serialize to the canonical `[multiplier, base_unit]` form."""
+        return [self.multiplier, self.base_unit]
 
     def __str__(self) -> str:
         """Return string representation of the unit."""

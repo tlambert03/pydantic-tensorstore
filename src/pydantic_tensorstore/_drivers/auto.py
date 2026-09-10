@@ -1,28 +1,25 @@
 """Auto driver specification for automatic format detection."""
 
+from __future__ import annotations
+
 from typing import ClassVar, Literal
 
 from pydantic import ConfigDict, Field
 
+from pydantic_tensorstore._core.base import since
 from pydantic_tensorstore._core.spec import BaseSpec
 from pydantic_tensorstore._kvstore import KvStore
 
 
 class AutoSpec(BaseSpec):
-    """Auto driver specification for automatic format detection.
+    """Auto driver: detects the format stored in a kvstore and delegates.
 
-    The auto driver automatically detects the format of data stored in a key-value
-    store and delegates to the appropriate TensorStore driver. This involves
-    additional read requests during opening to determine the format.
-
-    The auto driver supports chaining with other TensorStore adapters and can detect
-    various TensorStore and key-value store formats.
+    Extra members are context resource overrides passed to the detected driver.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
-    driver: Literal["auto"] = "auto"
-
-    kvstore: KvStore = Field(
-        description="Key-value store specification for data storage",
+    driver: Literal["auto"] = Field(
+        default="auto", json_schema_extra=since({"auto": "0.1.76"})
     )
+    kvstore: KvStore = Field(description="Key-value store specification.")

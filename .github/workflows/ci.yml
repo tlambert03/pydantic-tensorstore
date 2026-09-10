@@ -88,9 +88,70 @@ jobs:
     secrets:
       codecov_token: ${{ secrets.CODECOV_TOKEN }}
 
+  # Explicit tensorstore version ladder: oldest supported, a midpoint, the pinned
+  # (schema-verified) release, and whatever is newest on PyPI.
+  tensorstore-compat:
+    name: tensorstore ${{ matrix.tensorstore }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tensorstore: ["min", "0.1.77", "pinned", "latest"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - run: uv sync --no-dev --group test
+      - name: Install tensorstore ${{ matrix.tensorstore }}
+        run: |
+          case "${{ matrix.tensorstore }}" in
+            min)    v=$(uv run --no-sync python -c "import pydantic_tensorstore as p; print(p.MIN_TENSORSTORE_VERSION)") ;;
+            pinned) v=$(uv run --no-sync python -c "import pydantic_tensorstore as p; print(p.TENSORSTORE_VERSION)") ;;
+            latest) uv pip install --upgrade tensorstore; exit 0 ;;
+            *)      v="${{ matrix.tensorstore }}" ;;
+          esac
+          uv pip install "tensorstore==$v"
+      - run: uv run --no-sync python -c "from importlib.metadata import version; print('tensorstore', version('tensorstore'))"
+      - run: uv run --no-sync pytest -v
+
+  # Weekly: does the newest tensorstore release still match our models?
+  drift:
+    name: drift check (latest tensorstore)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - name: Fetch latest tensorstore schema
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: uv run --no-project scripts/update_ts_schema.py --latest --dest "$RUNNER_TEMP/ts_schema"
+      - name: Install latest tensorstore
+        run: uv sync --no-dev --group test --upgrade-package tensorstore
+      - name: Compare models against latest schema and runtime
+        env:
+          PTS_SCHEMA_DIR: ${{ runner.temp }}/ts_schema
+        run: |
+          uv run --no-sync python -c "from importlib.metadata import version; print('tensorstore', version('tensorstore'))"
+          uv run --no-sync pytest -v tests/test_schema_conformance.py tests/test_dtypes.py tests/test_since.py tests/test_tensorstore.py --deselect tests/test_schema_conformance.py::test_vendored_version_matches_package
+      - name: Report drift
+        if: failure()
+        uses: JasonEtco/create-an-issue@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ github.run_id }}
+        with:
+          filename: .github/DRIFT_TEMPLATE.md
+          update_existing: true
+
   build-and-inspect-package:
     name: Build & inspect package.
-    needs: test
+    needs: [test, tensorstore-compat, lint]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

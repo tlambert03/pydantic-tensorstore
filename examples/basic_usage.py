@@ -38,8 +38,7 @@ def example_zarr_spec() -> None:
     # Direct creation
     zarr_spec = Zarr2Spec(
         driver="zarr",
-        kvstore={"driver": "memory"},
-        path="my_array.zarr",
+        kvstore={"driver": "memory", "path": "my_array.zarr"},
         metadata={
             "chunks": [64, 64],
             "compressor": {"id": "blosc", "cname": "lz4"},
@@ -51,8 +50,7 @@ def example_zarr_spec() -> None:
     # With file storage
     file_zarr_spec = Zarr2Spec(
         driver="zarr",
-        kvstore={"driver": "file", "path": "/tmp/zarr_data/"},
-        path="dataset.zarr",
+        kvstore={"driver": "file", "path": "/tmp/zarr_data/dataset.zarr"},
     )
     print(f"File Zarr: {file_zarr_spec}")
 
@@ -63,8 +61,7 @@ def example_n5_spec() -> None:
 
     n5_spec = N5Spec(
         driver="n5",
-        kvstore={"driver": "file", "path": "/data/n5/"},
-        path="dataset",
+        kvstore={"driver": "file", "path": "/data/n5/dataset"},
         metadata={
             "dimensions": [1000, 1000, 100],
             "blockSize": [64, 64, 64],

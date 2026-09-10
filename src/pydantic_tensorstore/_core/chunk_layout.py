@@ -3,16 +3,20 @@
 Defines how data is partitioned into chunks for storage and I/O optimization.
 """
 
-from typing import Annotated, ClassVar, Literal, Self
+from __future__ import annotations
+
+from typing import Annotated, Literal, Self
 
 from annotated_types import Ge, Interval
-from pydantic import BaseModel, Field, NonNegativeFloat, NonNegativeInt, model_validator
+from pydantic import Field, NonNegativeFloat, NonNegativeInt, model_validator
+
+from pydantic_tensorstore._core.base import TensorStoreModel
 
 
-class ChunkLayoutGrid(BaseModel):
+class ChunkLayoutGrid(TensorStoreModel):
     """Constraints on the write/read/codec chunk grids."""
 
-    shape: list[NonNegativeInt] | Literal[-1] | None = Field(
+    shape: list[NonNegativeInt | Literal[-1] | None] | None = Field(
         default=None,
         description=(
             """Hard constraints on the chunk size for each dimension.
@@ -24,13 +28,13 @@ special value of -1 for a given dimension indicates that the chunk size should e
 full extent of the domain, and is always treated as a soft constraint."""
         ),
     )
-    shape_soft_constraint: list[NonNegativeInt] | Literal[-1] | None = Field(
+    shape_soft_constraint: list[NonNegativeInt | Literal[-1] | None] | None = Field(
         default=None,
         description="Preferred chunk sizes for each dimension. If a non-zero, "
         "non-null size for a given dimension is specified in both shape and "
         "shape_soft_constraint, shape takes precedence.",
     )
-    aspect_ratio: list[NonNegativeFloat] | None = Field(
+    aspect_ratio: list[NonNegativeFloat | None] | None = Field(
         default=None,
         description=(
             """Aspect ratio of the chunk shape.
@@ -46,7 +50,7 @@ resultant chunk size will be [60, 90, 90] (assuming it is not otherwise constrai
 """
         ),
     )
-    aspect_ratio_soft_constraint: list[NonNegativeFloat] | None = Field(
+    aspect_ratio_soft_constraint: list[NonNegativeFloat | None] | None = Field(
         default=None,
         description=(
             "Soft constraint on aspect ratio, lower precedence than aspect_ratio."
@@ -98,14 +102,12 @@ resultant chunk size will be [60, 90, 90] (assuming it is not otherwise constrai
         return self
 
 
-class ChunkLayout(BaseModel):
+class ChunkLayout(TensorStoreModel):
     """Chunk layout specification.
 
     Controls how array data is partitioned into chunks for storage,
     compression, and parallel I/O.
     """
-
-    model_config: ClassVar = {"extra": "forbid", "validate_assignment": True}
 
     rank: Annotated[int, Interval(ge=0, le=32)] | None = Field(
         default=None, description="Number of dimensions"
@@ -165,26 +167,43 @@ write/read-specific value that is also specified."""
         ),
     )
 
+    @property
+    def effective_rank(self) -> int | None:
+        """Rank, inferred from a per-dimension field when not given explicitly.
+
+        tensorstore infers the rank rather than requiring it, and
+        `ChunkLayout.to_json()` omits `rank` while emitting `inner_order`.
+        """
+        if self.rank is not None:
+            return self.rank
+        for attr in (
+            "inner_order",
+            "inner_order_soft_constraint",
+            "grid_origin",
+            "grid_origin_soft_constraint",
+        ):
+            if (value := getattr(self, attr)) is not None:
+                return len(value)
+        return None
+
     @model_validator(mode="after")
     def _post_validate(self) -> Self:
-        """Validate that inner_order is a valid permutation."""
-        # validate_inner_order and inner_order_soft_constraint
+        """Validate inner_order permutations and per-dimension field lengths."""
+        rank = self.effective_rank
+
         for field in ["inner_order", "inner_order_soft_constraint"]:
-            if (v := getattr(self, field)) is not None:
-                if self.rank is None:
-                    raise ValueError(f"rank must be specified when {field} is provided")
-                if sorted(v) != list(range(self.rank)):
+            if (v := getattr(self, field)) is not None and rank is not None:
+                if sorted(v) != list(range(rank)):
                     raise ValueError(
                         f"{field} must be a permutation of "
-                        f"[0, 1, ..., {self.rank - 1}], got {v}"
+                        f"[0, 1, ..., {rank - 1}], got {v}"
                     )
 
-        # validate_grid_origin_length and grid_origin_soft_constraint_length
         for field in ["grid_origin", "grid_origin_soft_constraint"]:
             value = getattr(self, field)
-            if value is not None and self.rank is not None and len(value) != self.rank:
+            if value is not None and rank is not None and len(value) != rank:
                 raise ValueError(
-                    f"{field} length ({len(value)}) must equal rank ({self.rank})"
+                    f"{field} length ({len(value)}) must equal rank ({rank})"
                 )
 
         return self
