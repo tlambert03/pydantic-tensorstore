@@ -53,8 +53,10 @@ class ArraySpec(BaseSpec):
     driver: Literal["array"] = "array"
     dtype: DataType | None = Field(
         default=None,
-        description="Data type. Required, except when nested as the `base` of an "
-        "adapter driver (tensorstore then hoists it to the adapter).",
+        description="Data type. Required, unless given instead via `schema.dtype`, "
+        "or when nested as the `base` of a `downsample` driver (which hoists it, "
+        "since downsampling preserves dtype; other adapters such as `cast` do "
+        "not hoist, since they convert between dtypes).",
     )
     array: Annotated[np.ndarray, ArrayValidator] = Field(
         description="Nested array data or NumPy array",
@@ -67,15 +69,20 @@ class ArraySpec(BaseSpec):
     @model_validator(mode="after")
     def _validate_array(self) -> Self:
         """Cast to the declared dtype when numpy knows it; check rank."""
+        effective_dtype = self.dtype
+        if effective_dtype is None and self.schema_ is not None:
+            effective_dtype = self.schema_.dtype
         try:
-            np_dtype = np.dtype(str(self.dtype)) if self.dtype is not None else None
+            np_dtype = (
+                np.dtype(str(effective_dtype)) if effective_dtype is not None else None
+            )
         except TypeError:
             np_dtype = None
         if np_dtype is not None and self.array.dtype != np_dtype:
             cast = self.array.astype(np_dtype)
             if not _round_trips(self.array, cast):
                 raise ValueError(
-                    f"array values cannot be represented in dtype '{self.dtype}' "
+                    f"array values cannot be represented in dtype '{effective_dtype}' "
                     f"without loss; cast the array explicitly if that is intended"
                 )
             object.__setattr__(self, "array", cast)
